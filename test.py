@@ -1,4 +1,4 @@
-#! /usr/bin/python3
+#! /usr/lib/python3
 
 import unittest
 from model import *
