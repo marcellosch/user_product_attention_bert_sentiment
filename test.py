@@ -1,4 +1,4 @@
-#! /usr/lib/python3
+#! /usr/bin/python3
 
 import unittest
 from model import *
@@ -14,8 +14,8 @@ class TestModel(unittest.TestCase):
 
     def test_SimpleUserProductBert(self):
         supb = SimpleUserProductBert(n_user=100, n_product=200, n_classes=5)
-        input_ids = torch.rand(64,512)
-        input_mask = torch.ones(64,512)
+        input_ids = (torch.rand(64,512)*800).long()
+        input_mask = torch.ones(64,512).long()
         user_ids = (torch.rand(64) * 100).long()
         product_ids = (torch.rand(64)*200).long()
         out = supb(input_ids, input_mask, user_ids, product_ids)

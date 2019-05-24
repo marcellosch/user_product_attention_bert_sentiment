@@ -40,10 +40,14 @@ class UserProductBert(torch.nn.Module):
         # this is called in the pytorch example, I dont't know why
         self.bert.train()
 
+
 class SimpleUserProductBert(torch.nn.Module):
 
     def __init__(self, n_user, n_product, n_classes, user_size=200, product_size=200, hidden_size=768):
         super(SimpleUserProductBert, self).__init__()
+        self.n_user = n_user
+        self.n_product = n_product
+        self.n_classes = n_classes
         self.user_size = user_size
         self.product_size = product_size
         self.hidden_size = hidden_size
