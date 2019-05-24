@@ -44,6 +44,9 @@ class SimpleUserProductBert(torch.nn.Module):
 
     def __init__(self, n_user, n_product, n_classes, user_size=200, product_size=200, hidden_size=768):
         super(SimpleUserProductBert, self).__init__()
+        self.user_size = user_size
+        self.product_size = product_size
+        self.hidden_size = hidden_size
         self.Uemb = torch.nn.Embedding(n_user, user_size)
         self.Pemb = torch.nn.Embedding(n_product, product_size)
         self.bert = BertModel.from_pretrained("bert-base-uncased")
