@@ -15,18 +15,19 @@ class TestModel(unittest.TestCase):
 
     def test_SimpleUserProductBert(self):
         supb = SimpleUserProductBert(n_user=100, n_product=200, n_classes=5)
-        input_ids = (torch.rand(64,512)*800).long()
-        input_mask = torch.ones(64,512).long()
-        user_ids = (torch.rand(64) * 100).long()
-        product_ids = (torch.rand(64)*200).long()
+        input_ids = (torch.rand(2,512)*800).long()
+        input_mask = torch.ones(2,512).long()
+        user_ids = (torch.rand(2) * 100).long()
+        product_ids = (torch.rand(2)*200).long()
         out = supb(input_ids, input_mask, user_ids, product_ids)
+        self.assertEqual(out.shape, (2,5))
 
     def test_VanillaBert(self):
         vbert = VanillaBert(n_classes=5)
-        input_ids = (torch.rand(64,512)*800).long()
-        input_mask = torch.ones(64,512).long()
+        input_ids = (torch.rand(1,512)*800).long()
+        input_mask = torch.ones(1,512).long()
         out = vbert(input_ids, input_mask)
-        self.assertEqual(out.shape,(64,5))
+        self.assertEqual(out.shape,(1,5))
 
 
 if __name__ == '__main__':
