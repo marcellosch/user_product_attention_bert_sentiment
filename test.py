@@ -3,6 +3,7 @@
 import unittest
 from model import *
 from modelbaselinebert import *
+from model_simple_user_product_bert import SimpleUserProductBert
 
 class TestModel(unittest.TestCase):
     def test_UserProductAttention_dimensions(self):
@@ -24,10 +25,10 @@ class TestModel(unittest.TestCase):
 
     def test_VanillaBert(self):
         vbert = VanillaBert(n_classes=5)
-        input_ids = (torch.rand(1,512)*800).long()
-        input_mask = torch.ones(1,512).long()
+        input_ids = (torch.rand(2,512)*800).long()
+        input_mask = torch.ones(2,512).long()
         out = vbert(input_ids, input_mask)
-        self.assertEqual(out.shape,(1,5))
+        self.assertEqual(out.shape,(2,5))
 
 
 if __name__ == '__main__':

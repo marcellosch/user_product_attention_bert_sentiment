@@ -21,7 +21,7 @@ class VanillaBert(torch.nn.Module):
             `input_mask`: torch.LongTensor of shape [batch_size, max_seq_length] with indices in [0,1]. The mask is used to mask sentences that are shorter than max_seq_length
         """
         bert_out, _ = self.bert(input_ids, output_all_encoded_layers=False)
-        linear_out = self.linear(bert_out)
+        linear_out = self.linear(bert_out[:,0,:])
         softmax_out = self.softmax(linear_out)
         return softmax_out
 
