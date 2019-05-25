@@ -8,7 +8,8 @@ logging.basicConfig(level=logging.INFO, format=log_format)
 
 class SimpleUserProductBert(torch.nn.Module):
 
-    def __init__(self, n_user, n_product, n_classes, user_size=200, product_size=200, hidden_size=768):
+    def __init__(self, n_user, n_product, n_classes, 
+            user_size=200, product_size=200, attention_hidden_size=200, hidden_size=768):
         super(SimpleUserProductBert, self).__init__()
         self.n_user = n_user
         self.n_product = n_product
@@ -19,7 +20,7 @@ class SimpleUserProductBert(torch.nn.Module):
         self.Uemb = torch.nn.Embedding(n_user, user_size)
         self.Pemb = torch.nn.Embedding(n_product, product_size)
         self.bert = BertModel.from_pretrained("bert-base-uncased")
-        self.word_attention = UserProductAttention()
+        self.word_attention = UserProductAttention(user_size, product_size, attention_hidden_size, hidden_size)
         self.linear = torch.nn.Linear(self.hidden_size, self.n_classes)
         self.softmax = torch.nn.Softmax()
     def forward(self, input_ids, input_mask, user_ids, product_ids, sentence_offsets=None):
