@@ -1,4 +1,7 @@
 from pathlib import Path
+from torch.utils.data import DataLoader, Dataset, RandomSampler
+from tqdm import tqdm
+from pytorch_pretrained_bert.optimization import BertAdam, WarmupLinearSchedule
 from model_simple_user_product_bert import SimpleUserProductBert
 from data import SentimentDataset, userlist_filename, productlist_filename, wordlist_filename, train_file
 
@@ -24,11 +27,9 @@ args = parser.parse_args()
 
 # Read training and test datasets
 train_dat = SentimentDataset(train_file, userlist_filename, productlist_filename, wordlist_filename)
-test_dat = 
-# TODO: put int the correct dataset and create test set
+test_dat = SentimentDataset(test_file, userlist_filename, productlist_filename, wordlist_filename)
 
 # Determine model parameter
-# TODO: Get these parameters from the correct dataset
 n_user = len(train_dat.users)
 n_product = len(train_dat.products)
 n_classes = 5
@@ -58,12 +59,12 @@ if n_gpu > 0:
 args.output_dir.mkdir(parents=True, exist_ok=True)
 
 # Calculate total training sample number:
-total_train_examples = 0 # TODO
+total_train_examples = len(train_dat) 
 num_train_optimization_steps = int(total_train_examples / args.batch_size / args.gradient_accumulation_steps)
 
 # Prepare optimizer
 param_optimizer = list(model.named_parameters())
-# TODO: check if named parameters includes all out models parameters also, what about the weight decay?
+# TODO read about weight decay, do we want this to happen in our model?
 no_decay = ['bias', 'LayerNorm.bias', 'LayerNorm.weight']
 optimizer_grouped_parameters = [
     {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
@@ -134,7 +135,8 @@ for epoch in range(args.epochs):
                 test_sampler = RandomSampler(test_dat)
                 test_dataloader = DataLoader(test_dat, sampler=test_sampler, batch_size=args.train_batch_size)
                 for step, batch in enumerate(test_dataloader)
-                    batch = tuple(t.to(device) for t in batch)
+                    pass
+                    #batch = tuple(t.to(device) for t in batch)
                     # TODO: write code that evaluates model performance on test set
                 
 
