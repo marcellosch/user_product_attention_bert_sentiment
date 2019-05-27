@@ -1,3 +1,4 @@
+import pdb
 import torch
 import logging
 
@@ -35,14 +36,6 @@ class UserProductAttention(torch.nn.Module):
     pt = self.Wp(p).unsqueeze(1).repeat(1,seq_len,1) #       [batch_size, seq_len, out_size]
     bt = self.b.repeat(batch_size,seq_len,1) #  [batch_size, seq_len, out_size]
     Ht = self.Wh(H) #                           [batch_size, seq_len, out_size]
-    print("H {}".format(H.device))
-    print("u {}".format(u.device))
-    print("p {}".format(p.device))
-    print("self.Wh {}".format(self.Wh.device))
-    print("self.Wu {}".format(self.Wu.device))
-    print("self.Wp {}".format(self.Wp.device))
-    print("self.v {}".format(self.v.device))
-    print("self.b {}".format(self.Wh.device))
     alphas = None
     if sentence_offsets is None: # all inputs belong to the same sequence
         raw_alphas = self.v(self.tanh(Ht + ut + pt + bt)) # [batch_size, seq_len, 1]

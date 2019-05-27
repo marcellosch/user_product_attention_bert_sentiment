@@ -44,4 +44,8 @@ class SimpleUserProductBert(torch.nn.Module):
         # this is called in the pytorch example, I dont't know why
         self.bert.train()
 
+    def to(self, *args, **kwargs):
+        self = super().to(*args, **kwargs) 
+        self.word_attention = self.word_attention.to(*args, **kwargs) 
+        return self
 
