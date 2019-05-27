@@ -112,6 +112,7 @@ logging.info("***** Running training *****")
 logging.info(f"  Num examples = {total_train_examples}")
 logging.info("  Batch size = %d", args.train_batch_size)
 logging.info("  Num steps = %d", num_train_optimization_steps)
+model.to(device)
 model.train()
 
 for epoch in range(args.epochs):
