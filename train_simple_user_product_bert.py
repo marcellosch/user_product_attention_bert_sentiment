@@ -14,7 +14,7 @@ import random
 import numpy as np
 
 
-def eval_on_data(model, data):
+def eval_on_data(model, data, args, device, n_classes):
     # Run prediction for full data
     sampler = SequentialSampler(data)
     eval_dataloader = DataLoader(data, sampler=sampler, batch_size=args.eval_batch_size)
@@ -23,9 +23,11 @@ def eval_on_data(model, data):
     eval_loss = 0
     nb_eval_steps = 0
     preds = []
+    labels = []
 
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
         batch = tuple(t.to(device) for t in batch)
+        label = batch[2]
         #user_id, product_id, label, text, sentence_idx, mask = batch
             
         #user_id, product_id, label, text, sentence_idx, mask = batch
@@ -36,7 +38,7 @@ def eval_on_data(model, data):
 
         # create eval loss
         loss_function = CrossEntropyLoss()
-        tmp_eval_loss = loss_function(logits.view(-1, num_labels), label.view(-1))
+        tmp_eval_loss = loss_function(logits.view(-1, n_classes), label.view(-1))
     
         eval_loss += tmp_eval_loss.mean().item()
         nb_eval_steps += 1
@@ -45,9 +47,12 @@ def eval_on_data(model, data):
         else:
             preds[0] = np.append(
                 preds[0], logits.detach().cpu().numpy(), axis=0)
+        labels += label.tolist()
 
     preds = preds[0]
     preds = np.argmax(preds, axis=1)
+    labels = np.array(labels)
+    
 
     assert len(preds) == len(labels)
     accuracy = (preds == labels).mean()
@@ -194,13 +199,13 @@ def main(modelClass, datasetClass):
                     optimizer.step()
                     optimizer.zero_grad()
                     global_step += 1
-                dev_acc, dev_loss = eval_on_data(model, dev_dat)
+                dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, n_classes)
                 mode.train()
         
         logging.info("***** Running evaluation on dev set *****")
         logging.info("  Num examples = %d", len(dev_dat))
         logging.info("  Batch size = %d", args.eval_batch_size)    
-        dev_acc, dev_loss = eval_on_data(model, dev_dat)
+        dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, n_classes)
         logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, dev_acc, dev_loss))
 
     # Save a trained model

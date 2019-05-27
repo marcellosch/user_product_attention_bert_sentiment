@@ -32,7 +32,7 @@ class SimpleUserProductBert(torch.nn.Module):
             `product_ids`: torch.LongTensor of shape [batch_size] that denotes the product ids for documents
             `sentence_offsets`: list of batch_size iterables where each contains the integer offsets of the sentence starts in document 
         """
-        input_ids, input_mask, user_ids, product_ids, _ = batch
+        user_ids, product_ids, _, input_ids, sentence_idx, input_mastk = batch
         user_embs = self.Uemb(user_ids)
         product_embs = self.Pemb(product_ids)
         bert_out, _ = self.bert(input_ids, output_all_encoded_layers=False)
