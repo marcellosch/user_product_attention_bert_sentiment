@@ -25,12 +25,14 @@ def eval_on_data(model, data):
     preds = []
 
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
-        
-        user_id, product_id, label, text, sentence_idx, mask = batch
-        user_id, product_id, label, text, sentence_idx, mask = user_id.to(device), product_id.to(device), label.to(device), text.to(device), sentence_idx.to(device), mask.to(device)
+        batch = tuple(t.to(device) for t in batch)
+        #user_id, product_id, label, text, sentence_idx, mask = batch
+            
+        #user_id, product_id, label, text, sentence_idx, mask = batch
+        #user_id, product_id, label, text, sentence_idx, mask = user_id.to(device), product_id.to(device), label.to(device), text.to(device), sentence_idx.to(device), mask.to(device)
 
         with torch.no_grad():
-            logits = model(text, mask, user_id, product_id, labels=None)
+            logits = model(batch)
 
         # create eval loss
         loss_function = CrossEntropyLoss()
@@ -54,7 +56,7 @@ def eval_on_data(model, data):
     return accuracy, eval_loss
 
 
-if __name__ == "__main__":
+def main(modelClass, datasetClass):
     log_format = '%(asctime)-10s: %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_format)
 
@@ -80,8 +82,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Read training and test datasets
-    train_dat = SentimentDataset(train_file, userlist_filename, productlist_filename, wordlist_filename)
-    dev_dat = SentimentDataset(test_file, userlist_filename, productlist_filename, wordlist_filename)
+    train_dat = datasetClass(train_file, userlist_filename, productlist_filename, wordlist_filename)
+    dev_dat = datasetClass(test_file, userlist_filename, productlist_filename, wordlist_filename)
 
     # Determine model parameter
     n_user = len(train_dat.users)
@@ -89,7 +91,7 @@ if __name__ == "__main__":
     n_classes = 5
 
     # Initialize model
-    model = SimpleUserProductBert(n_user, n_product, n_classes, args.user_size, args.product_size, args.attention_hidden_size)
+    model = modelClass(n_user, n_product, n_classes, args.user_size, args.product_size, args.attention_hidden_size)
     if args.fp16:
         model.half()
 
@@ -166,11 +168,12 @@ if __name__ == "__main__":
         nb_tr_examples, nb_tr_steps = 0, 0
         with tqdm(total=len(train_dataloader), desc=f"Epoch {epoch}") as pbar:
             for step, batch in enumerate(train_dataloader):
-                # batch = tuple(t.to(device) for t in batch)
+                batch = tuple(t.to(device) for t in batch)
                 user_id, product_id, label, text, sentence_idx, mask = batch
-                user_id, product_id, label, text, sentence_idx, mask = user_id.to(device), product_id.to(device), label.to(device), text.to(device), sentence_idx.to(device), mask.to(device)
+                #user_id, product_id, label, text, sentence_idx, mask = user_id.to(device), product_id.to(device), label.to(device), text.to(device), sentence_idx.to(device), mask.to(device)
 
-                prediction = model(text, mask, user_id, product_id)
+                prediction = model(batch)
+                #prediction = model(text, mask, user_id, product_id)
                     
                 loss = criterion(prediction, label)
                 if n_gpu > 1:
@@ -213,3 +216,5 @@ if __name__ == "__main__":
     torch.save(model_to_save.state_dict(), str(output_model_file))
 
 
+if __name__ == "__main__":
+    main(SimpleUserProductBert, SentimentDataset)
