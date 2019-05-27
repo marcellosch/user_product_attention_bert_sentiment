@@ -40,7 +40,7 @@ class SimpleUserProductBert(torch.nn.Module):
         softmax_out = self.softmax(linear_out)
         return softmax_out
 
-    def train():
+    def train(self):
         # this is called in the pytorch example, I dont't know why
         self.bert.train()
 

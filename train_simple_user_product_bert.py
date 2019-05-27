@@ -121,8 +121,10 @@ for epoch in range(args.epochs):
     nb_tr_examples, nb_tr_steps = 0, 0
     with tqdm(total=len(train_dataloader), desc=f"Epoch {epoch}") as pbar:
         for step, batch in enumerate(train_dataloader):
-            batch = tuple(t.to(device) for t in batch)
+#            batch = tuple(t.to(device) for t in batch)
             user_id, product_id, label, text, sentence_idx, mask = batch
+            user_id, product_id, label, text, sentence_idx, mask = user_id.to(device), product_id.to(device), label.to(device), text.to(device), sentence_idx.to(device), mask.to(device)
+
             prediction = model(text, mask, user_id, product_id)
             loss = criterion(prediction, label)
             if n_gpu > 1:
