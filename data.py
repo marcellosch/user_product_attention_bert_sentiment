@@ -30,7 +30,7 @@ class  SentimentDataset(Dataset):
 
     """
 
-    def __init__(self, train_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=False):
+    def __init__(self, document_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=False):
         
         if not os.path.exists('./data/yelp14'):
             wget.download(DATASET_URL)
@@ -44,16 +44,16 @@ class  SentimentDataset(Dataset):
         if not os.path.exists(CACHE_PATH):
             os.makedirs(CACHE_PATH)
 
-        document_path = CACHE_PATH + 'documents'
-        is_cached = os.path.isfile(document_path)
+        document_cache_path = CACHE_PATH + '-'.join(document_file.split('/'))
+        is_cached = os.path.isfile(document_cache_path)
         self.users, self.user_string2int = self.read_userlist(userlist_filename)
         self.products, self.product_string2int = self.read_productlist(productlist_filename)
         self.word_list, self.vocabulary = self.read_vocabulary(wordlist_filename)
         if not is_cached or force_no_cache:
-            self.document_list, self.documents = self.read_documents(train_file, document_path)
+            self.document_list, self.documents = self.read_documents(document_file, document_cache_path)
             print("Preprocessed {0} documents and cached to disk.".format(len(self.documents)))
         else:
-            self.documents = self.read_docs_from_cache(document_path)
+            self.documents = self.read_docs_from_cache(document_cache_path)
             print("Loaded {0} documents from disk.".format(len(self.documents)))
 
 
@@ -135,8 +135,8 @@ class  SentimentDataset(Dataset):
         """
 
         # limit the amount of documents for testing purposes if necessary
-        # lines = list(map(lambda x: x.split('\t\t'), open(train_file).readlines()))[:100] 
-        lines = list(map(lambda x: x.split('\t\t'), open(train_file).readlines()))
+        # lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))[:100] 
+        lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))
         documents = []
         document_list = []
         self.count_long_text = 0
