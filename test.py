@@ -3,6 +3,7 @@
 import unittest
 from model import *
 from modelbaselinebert import *
+from modelbaselineupa import *
 from model_simple_user_product_bert import SimpleUserProductBert
 
 class TestModel(unittest.TestCase):
@@ -28,6 +29,13 @@ class TestModel(unittest.TestCase):
         input_ids = (torch.rand(2,512)*800).long()
         input_mask = torch.ones(2,512).long()
         out = vbert(input_ids, input_mask)
+        self.assertEqual(out.shape,(2,5))
+
+    def test_VanillaUPA(self):
+        vupa = VanillaUPA(n_user=100, n_product=200, n_words=30522, n_classes=5)
+        input_ids = (torch.rand(2,512)*800).long()
+        input_mask = torch.ones(2,512).long()
+        out = vupa(input_ids, input_mask)
         self.assertEqual(out.shape,(2,5))
 
 
