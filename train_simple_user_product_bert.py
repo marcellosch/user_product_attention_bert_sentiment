@@ -1,9 +1,19 @@
+#! /usr/bin/python3
+import pdb
+import torch
 from pathlib import Path
 from torch.utils.data import DataLoader, Dataset, RandomSampler
 from tqdm import tqdm
 from pytorch_pretrained_bert.optimization import BertAdam, WarmupLinearSchedule
 from model_simple_user_product_bert import SimpleUserProductBert
-from data import SentimentDataset, userlist_filename, productlist_filename, wordlist_filename, train_file
+from data import SentimentDataset, userlist_filename, productlist_filename, wordlist_filename, train_file, test_file
+from argparse import ArgumentParser
+import logging
+import random
+import numpy as np
+
+log_format = '%(asctime)-10s: %(message)s'
+logging.basicConfig(level=logging.INFO, format=log_format)
 
 
 # Argument parsing
@@ -60,7 +70,7 @@ args.output_dir.mkdir(parents=True, exist_ok=True)
 
 # Calculate total training sample number:
 total_train_examples = len(train_dat) 
-num_train_optimization_steps = int(total_train_examples / args.batch_size / args.gradient_accumulation_steps)
+num_train_optimization_steps = int(total_train_examples / args.train_batch_size / args.gradient_accumulation_steps)
 
 # Prepare optimizer
 param_optimizer = list(model.named_parameters())
@@ -112,16 +122,19 @@ for epoch in range(args.epochs):
     with tqdm(total=len(train_dataloader), desc=f"Epoch {epoch}") as pbar:
         for step, batch in enumerate(train_dataloader):
             batch = tuple(t.to(device) for t in batch)
-            input_ids, input_mask, segment_ids, lm_label_ids, target_class = batch
-            tr_loss = criterion(model(input_ids, segment_ids, input_mask, lm_label_ids), target_class)
+            user_id, product_id, label, text, sentence_idx, mask = batch
+            prediction = model(text, mask, user_id, product_id)
+            loss = criterion(prediction, label)
             if n_gpu > 1:
-                tr_loss = loss.mean() # mean() to average on multi-gpu.
+                loss = loss.mean() # mean() to average on multi-gpu.
             if args.gradient_accumulation_steps > 1:
-                tr_loss = loss / args.gradient_accumulation_steps
+                loss = loss / args.gradient_accumulation_steps
+            if args.fp16:
+                optimizer.backward(loss)
             else:
-                tr_loss.backward()
+                loss.backward()
             tr_loss += loss.item()
-            nb_tr_examples += input_ids.size(0)
+            nb_tr_examples += text.size(0)
             nb_tr_steps += 1
             pbar.update(1)
             mean_loss = tr_loss * args.gradient_accumulation_steps / nb_tr_steps
@@ -134,7 +147,7 @@ for epoch in range(args.epochs):
                 test_loss = 0
                 test_sampler = RandomSampler(test_dat)
                 test_dataloader = DataLoader(test_dat, sampler=test_sampler, batch_size=args.train_batch_size)
-                for step, batch in enumerate(test_dataloader)
+                for step, batch in enumerate(test_dataloader):
                     pass
                     #batch = tuple(t.to(device) for t in batch)
                     # TODO: write code that evaluates model performance on test set

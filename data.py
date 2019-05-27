@@ -46,10 +46,10 @@ class  SentimentDataset(Dataset):
 
         document_path = CACHE_PATH + 'documents'
         is_cached = os.path.isfile(document_path)
+        self.users, self.user_string2int = self.read_userlist(userlist_filename)
+        self.products, self.product_string2int = self.read_productlist(productlist_filename)
+        self.word_list, self.vocabulary = self.read_vocabulary(wordlist_filename)
         if not is_cached or force_no_cache:
-            self.users, self.user_string2int = self.read_userlist(userlist_filename)
-            self.products, self.product_string2int = self.read_productlist(productlist_filename)
-            self.word_list, self.vocabulary = self.read_vocabulary(wordlist_filename)
             self.document_list, self.documents = self.read_documents(train_file, document_path)
             print("Preprocessed {0} documents and cached to disk.".format(len(self.documents)))
         else:
@@ -143,12 +143,14 @@ class  SentimentDataset(Dataset):
         for i, line in enumerate(lines):
             user_id, product_id, label, text = line
 
+            label = int(label)-1 # classes are from 0-4 but starts from 1-5
+
             text, sentence_idx, mask = self.preprocess(text, sentence_delimeter='<sssss>')
             document_list.append((user_id, product_id, label, text))
             
             user_id = torch.tensor(self.user_string2int[user_id], dtype=torch.int64)
             product_id = torch.tensor(self.product_string2int[product_id], dtype=torch.int64)
-            label = torch.tensor(int(label), dtype=torch.int64)
+            label = torch.tensor(label, dtype=torch.int64)
             text = torch.tensor(text, dtype=torch.int64)
             sentence_idx = torch.tensor(sentence_idx, dtype=torch.int64)
             mask = torch.tensor(mask, dtype=torch.int64)
