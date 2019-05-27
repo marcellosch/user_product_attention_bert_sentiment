@@ -17,7 +17,7 @@ import numpy as np
 def eval_on_data(model, data):
     # Run prediction for full data
     sampler = SequentialSampler(data)
-    dataloader = DataLoader(data, sampler=sampler, batch_size=args.eval_batch_size)
+    eval_dataloader = DataLoader(data, sampler=sampler, batch_size=args.eval_batch_size)
 
     model.eval()
     eval_loss = 0
@@ -194,14 +194,8 @@ def main(modelClass, datasetClass):
                     optimizer.step()
                     optimizer.zero_grad()
                     global_step += 1
-                if test_dat and (step + 1) % 1000 == 0:
-                    test_loss = 0
-                    test_sampler = RandomSampler(test_dat)
-                    test_dataloader = DataLoader(test_dat, sampler=test_sampler, batch_size=args.train_batch_size)
-                    for step, batch in enumerate(test_dataloader):
-                        pass
-                        #batch = tuple(t.to(device) for t in batch)
-                        # TODO: write code that evaluates model performance on test set
+                dev_acc, dev_loss = eval_on_data(model, dev_dat)
+                mode.train()
         
         logging.info("***** Running evaluation on dev set *****")
         logging.info("  Num examples = %d", len(dev_dat))
