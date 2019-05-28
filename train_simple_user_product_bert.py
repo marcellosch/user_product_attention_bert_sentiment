@@ -200,7 +200,7 @@ def main(modelClass, datasetClass):
                     optimizer.zero_grad()
                     global_step += 1
                 dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, n_classes)
-                mode.train()
+                model.train()
         
         logging.info("***** Running evaluation on dev set *****")
         logging.info("  Num examples = %d", len(dev_dat))
