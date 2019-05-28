@@ -83,12 +83,13 @@ def main(modelClass, datasetClass):
     parser.add_argument("--user_size", type=int, default=200, help="User embedding dimension")
     parser.add_argument("--product_size", type=int, default=200, help="Product embedding dimension")
     parser.add_argument("--attention_hidden_size", type=int, default=200, help="Attention hidden state dimension")
+    parser.add_argument("--force_document_processing", action="store_true", help="Force document preprocessing")
 
     args = parser.parse_args()
 
     # Read training and test datasets
-    train_dat = datasetClass(train_file, userlist_filename, productlist_filename, wordlist_filename)
-    dev_dat = datasetClass(test_file, userlist_filename, productlist_filename, wordlist_filename)
+    train_dat = datasetClass(train_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=args.force_document_processing)
+    dev_dat = datasetClass(test_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=args.force_document_processing)
 
     # Determine model parameter
     n_user = len(train_dat.users)
@@ -120,7 +121,7 @@ def main(modelClass, datasetClass):
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Calculate total training sample number:
-    total_train_examples = len(train_dat) 
+    total_train_examples = args.epochs * len(train_dat) 
     num_train_optimization_steps = int(total_train_examples / args.train_batch_size / args.gradient_accumulation_steps)
 
     # Prepare optimizer
