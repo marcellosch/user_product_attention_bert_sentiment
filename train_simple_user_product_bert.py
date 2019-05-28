@@ -199,7 +199,7 @@ def main(modelClass, datasetClass):
                     optimizer.step()
                     optimizer.zero_grad()
                     global_step += 1
-                dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, n_classes)
+                # dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, n_classes)
                 model.train()
         
         logging.info("***** Running evaluation on dev set *****")
