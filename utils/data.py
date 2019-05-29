@@ -234,6 +234,7 @@ class  SentimentDataset(Dataset):
                            text=doc.text, 
                            sentence_idx=doc.sentence_idx,
                            mask=doc.mask,
+                           sentence_matrix=doc.sentence_matrix,
                            max_sentence_count=max_sentence_count))
                                     
         documents = tmp
