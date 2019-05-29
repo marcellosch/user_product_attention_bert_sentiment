@@ -34,7 +34,16 @@ class  SentimentDataset(Dataset):
     """
 
     def __init__(self, document_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=False):
-        
+        self.user_id = []
+        self.product_id = []
+        self.label = []
+        self.text = []
+        self.sentence_idx = []
+        self.mask = []
+        self.sentence_matrix = []
+        self.max_sentence_count = 0
+        self.fields = [("user_id", self.user_id), ("product_id", self.product_id), ("label", self.label), ("text", self.text), ("sentence_idx", self.sentence_idx), ("mask", self.mask), ("sentence_matrix", self.sentence_matrix), ("max_sentence_count", self.max_sentence_count)]
+
         if not os.path.exists('./data/yelp14'):
             wget.download(DATASET_URL)
             zf = zipfile.ZipFile(open("data.zip", "rb"))
@@ -53,10 +62,10 @@ class  SentimentDataset(Dataset):
         self.products, self.product_string2int = self.read_productlist(productlist_filename)
         self.word_list, self.vocabulary = self.read_vocabulary(wordlist_filename)
         if not is_cached or force_no_cache:
-            self.documents = self.read_documents(document_file, document_cache_path)
+            self.read_documents(document_file, document_cache_path)
             print("Preprocessed {0} documents and cached to disk.".format(len(self.documents)))
         else:
-            self.documents = self.read_docs_from_cache(document_cache_path)
+            self.read_docs_from_cache(document_cache_path)
             print("Loaded {0} documents from disk.".format(len(self.documents)))
 
 
@@ -191,9 +200,8 @@ class  SentimentDataset(Dataset):
         """
 
         # limit the amount of documents for testing purposes if necessary
-        # lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))[:100] 
-        lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))
-        documents = []
+        lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))[:1000] 
+        # lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))
         self.count_long_text = 0
         max_sentence_count = 0
         for i, line in enumerate(lines):
@@ -203,73 +211,37 @@ class  SentimentDataset(Dataset):
 
             text, sentence_idx, mask, sentence_matrix = self.preprocess(text, sentence_delimeter='<sssss>')
             
-            user_id = torch.tensor(self.user_string2int[user_id], dtype=torch.int64)
-            product_id = torch.tensor(self.product_string2int[product_id], dtype=torch.int64)
-            label = torch.tensor(label, dtype=torch.int64)
-            text = torch.tensor(text, dtype=torch.int64)
-            sentence_idx = torch.tensor(sentence_idx, dtype=torch.int64)
-            mask = torch.tensor(mask, dtype=torch.int64)
+            self.user_id.append(torch.tensor(self.user_string2int[user_id], dtype=torch.int64))
+            self.product_id.append(torch.tensor(self.product_string2int[product_id], dtype=torch.int64))
+            self.label.append(torch.tensor(label, dtype=torch.int64))
+            self.text.append(torch.tensor(text, dtype=torch.int64))
+            self.sentence_idx.append(torch.tensor(sentence_idx, dtype=torch.int64))
+            self.mask.append(torch.tensor(mask, dtype=torch.int64))
+            self.sentence_matrix.append(sentence_matrix)
 
             if len(sentence_idx) > max_sentence_count:
                 max_sentence_count = len(sentence_idx)
  
-            doc = Doc(user_id=user_id,
-                      product_id=product_id,
-                      label=label,
-                      text=text, 
-                      sentence_idx=sentence_idx,
-                      mask=mask,
-                      sentence_matrix=sentence_matrix,
-                      max_sentence_count=0)
-
-            documents.append(doc)
 
             if i % 5000 == 0:
                 print("Processed {0} of {1} documents. ({2:.1f}%)".format(i, len(lines), i*100/len(lines)))
-        
-        tmp = []
-        for doc in documents:
-            tmp.append(Doc(user_id=doc.user_id,
-                           product_id=doc.product_id,
-                           label=doc.label, 
-                           text=doc.text, 
-                           sentence_idx=doc.sentence_idx,
-                           mask=doc.mask,
-                           sentence_matrix=doc.sentence_matrix,
-                           max_sentence_count=max_sentence_count))
-                                    
-        documents = tmp
-        
+        self.max_sentence_count = max_sentence_count
 
-        document_chunks = [list(x) for x in np.array_split(documents, 100)]
-        with open(cache_path, "wb") as f:
-            num_of_chunks = len(document_chunks)
-            pickle.dump(num_of_chunks, f)
-            for doc in document_chunks:
-                pickle.dump(doc, f)
-
-        return documents
-
+        for label, field in self.fields:
+            field = torch.stack(field)
+            torch.save(field,cache_path + "/"+ label)
 
     def read_docs_from_cache(self, load_path):
         """ Loads the cached preprocessed documents from disk. """
-
-        document_chunks = []
-        
-        with open(load_path, 'rb') as f:
-            num_of_chunks = pickle.load(f)
-            for _ in range(num_of_chunks):
-                document_chunks.append(pickle.load(f))
-
-        return list(np.concatenate(document_chunks))
-
+        for label, field in self.fields:
+            field = torch.load(load_path + "/" + label )
 
     def __getitem__(self, idx):
-       doc = self.documents[idx]
+       doc = tuple([field[idx] for _, field in self.fields[:-1]] + [self.max_sentence_count])
        return doc
     
     def __len__(self):
-        return len(self.documents)
+        return len(self.user_id)
     
 
 userlist_filename = './data/yelp14/usrlist.txt'
