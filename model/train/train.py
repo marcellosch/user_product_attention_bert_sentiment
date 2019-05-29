@@ -10,7 +10,7 @@ import logging
 import random
 import numpy as np
 
-def eval_on_data(model, data, args, device, n_classes):
+def eval_on_data(model, data, args, device):
     # Run prediction for full data
     sampler = SequentialSampler(data)
     eval_dataloader = DataLoader(data, sampler=sampler, batch_size=args.eval_batch_size)
@@ -34,7 +34,7 @@ def eval_on_data(model, data, args, device, n_classes):
 
         # create eval loss
         loss_function = CrossEntropyLoss()
-        tmp_eval_loss = loss_function(logits.view(-1, n_classes), label.view(-1))
+        tmp_eval_loss = loss_function(logits, label.view(-1))
 
         eval_loss += tmp_eval_loss.mean().item()
         nb_eval_steps += 1
@@ -157,14 +157,15 @@ def train(model, train_dat, dev_dat, args):
         train_sampler = RandomSampler(train_dat)
         train_dataloader = DataLoader(train_dat, sampler=train_sampler, batch_size=args.train_batch_size)
         tr_loss = 0
-        nb_tr_examples, nb_tr_steps = 0, 0
+        nb_tr_steps = 0
         with tqdm(total=len(train_dataloader), desc=f"Epoch {epoch}") as pbar:
             for step, batch in enumerate(train_dataloader):
                 batch = tuple(t.to(device) for t in batch)
-                user_id, product_id, label, text, sentence_idx, mask = batch
+               # user_id, product_id, label, text, sentence_idx, mask = batch
                 #user_id, product_id, label, text, sentence_idx, mask = user_id.to(device), product_id.to(device), label.to(device), text.to(device), sentence_idx.to(device), mask.to(device)
 
                 prediction = model(batch)
+                label = batch[2]
                 #prediction = model(text, mask, user_id, product_id)
 
                 loss = criterion(prediction, label)
@@ -177,7 +178,6 @@ def train(model, train_dat, dev_dat, args):
                 else:
                     loss.backward()
                 tr_loss += loss.item()
-                nb_tr_examples += text.size(0)
                 nb_tr_steps += 1
                 pbar.update(1)
                 mean_loss = tr_loss * args.gradient_accumulation_steps / nb_tr_steps

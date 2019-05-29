@@ -23,4 +23,4 @@ if __name__ == "__main__":
     n_classes = 5
 
     model = SimpleUPABert(n_user, n_product, n_classes, args.user_size, args.product_size, args.attention_hidden_size)
-    train(model, train_dat, dev_dat)
+    train(model, train_dat, dev_dat, args)
