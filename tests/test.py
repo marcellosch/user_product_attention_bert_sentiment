@@ -15,8 +15,8 @@ class TestModel(unittest.TestCase):
         out = upa(H, u, p)
         self.assertEqual(out.shape, (64, 768))
 
-    def test_SimpleUserProductBert(self):
-        supb = SimpleUserProductBert(n_user=100, n_product=200, n_classes=5)
+    def test_SimpleUPABert(self):
+        supb = SimpleUPABert(n_user=100, n_product=200, n_classes=5)
         input_ids = (torch.rand(2, 512)*800).long()
         input_mask = torch.ones(2, 512).long()
         user_ids = (torch.rand(2) * 100).long()
