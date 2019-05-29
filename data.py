@@ -13,7 +13,7 @@ import pdb
 
 
 Word = namedtuple('Word', ['idx', 'id'])
-Doc = namedtuple('Doc', ['user_id', 'product_id', 'label', 'text', 'sentence_idx', 'mask'])
+Doc = namedtuple('Doc', ['user_id', 'product_id', 'label', 'text', 'sentence_idx', 'mask', 'sentence_matrix'])
 
 CACHE_PATH = './cache/'
 DATASET_URL = 'http://www.thunlp.org/~chm/data/data.zip'
@@ -50,7 +50,7 @@ class  SentimentDataset(Dataset):
         self.products, self.product_string2int = self.read_productlist(productlist_filename)
         self.word_list, self.vocabulary = self.read_vocabulary(wordlist_filename)
         if not is_cached or force_no_cache:
-            self.document_list, self.documents = self.read_documents(document_file, document_cache_path)
+            self.documents = self.read_documents(document_file, document_cache_path)
             print("Preprocessed {0} documents and cached to disk.".format(len(self.documents)))
         else:
             self.documents = self.read_docs_from_cache(document_cache_path)
@@ -64,6 +64,17 @@ class  SentimentDataset(Dataset):
             - token to id conversion
             - calculate sentence positions
             - calculate the mask
+
+        Args:
+            text (str): Raw text of document.
+            sentence_delimeter (str)
+
+        Returns:
+            token_ids (list of int): list containing the id of each token.
+            sentence_idx (list of (int, int) ): list containing the beginning and end of each sentence. 
+            mask (list of int): list of ones and zeros.
+            sentence_matrix: matrix with dimensions (max_num_sentences, max_sequence_length). 
+                             Each entry represents the token embedding id.
         """
         text = text.replace(sentence_delimeter, '[SEP]')
         tokenized = self.tokenizer.tokenize(text)
@@ -84,12 +95,47 @@ class  SentimentDataset(Dataset):
             cumsum += sent_l
 
         sentence_idx += ([(-1,-1)] * (512-len(sentence_idx)))
-            
+        
+
         tokenized = ([token for token in tokenized if token != '[SEP]'] + 512 * ['[PAD]'])[:512]
         token_ids = self.tokenizer.convert_tokens_to_ids(tokenized)
         mask = [1 if token != 0 else 0 for token in token_ids]
         
-        return token_ids, sentence_idx, mask
+        # TODO remove hardcoded values
+        max_sentence_length = 512
+        max_num_of_sentences = 20
+        sentence_matrix = self.create_sentence_matrix(token_ids, sentence_idx, max_sentence_length, max_num_of_sentences)
+
+        return token_ids, sentence_idx, mask, sentence_matrix
+
+    def create_sentence_matrix(self, token_ids, sentence_idx, max_sentence_length, max_num_of_sentences):
+        """
+        Args:
+            token_ids (list of int): list containing the id of each token.
+            sentence_idx (list of (int, int) ): list containing the beginning and end of each sentence. 
+            max_sentence_length (int): max number of tokens per sentence
+            max_sum_of_sentences (int): max number of sentences per document
+
+        Returns:
+            sentence_matrix (tensor of dimensions (max_num_of_sentences, max_sentence_length) ): matrix where each row corresponds to the token ids of a sentence.
+                                                                                                 Sentences and document are padded.
+        """
+
+        document = []
+        for begin, end in sentence_idx:
+            sentence_tokens = token_ids[begin:end]
+            padded_sntence_tokens = (sentence_tokens + max_sentence_length * [0])[:max_sentence_length]
+            document.append(torch.tensor(padded_sntence_tokens, dtype=torch.int64))
+
+            if begin == -1 or end == -1:
+                break
+
+        dummy_sentence = torch.tensor(max_sentence_length * [0], dtype=torch.int64)
+        padded_document = (document + max_num_of_sentences * [dummy_sentence])[:max_num_of_sentences]
+
+        sentence_matrix = torch.stack(padded_document)
+        
+        return sentence_matrix
 
     def read_userlist(self, filename):
         """ Read userlist from file containing one user id per line. """
@@ -132,21 +178,26 @@ class  SentimentDataset(Dataset):
         - user_id 
         - product_id 
         - review text seperated with double tabs('\t\t').
+
+        Args:
+            filename (str): the filepath of the documents
+            cahce_path (str): the filepath to the documents cache
+
+        Returns:
+            docuements (list of Doc)
         """
 
         # limit the amount of documents for testing purposes if necessary
         # lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))[:100] 
         lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))
         documents = []
-        document_list = []
         self.count_long_text = 0
         for i, line in enumerate(lines):
             user_id, product_id, label, text = line
 
             label = int(label)-1 # classes are from 0-4 but starts from 1-5
 
-            text, sentence_idx, mask = self.preprocess(text, sentence_delimeter='<sssss>')
-            document_list.append((user_id, product_id, label, text))
+            text, sentence_idx, mask, sentence_matrix = self.preprocess(text, sentence_delimeter='<sssss>')
             
             user_id = torch.tensor(self.user_string2int[user_id], dtype=torch.int64)
             product_id = torch.tensor(self.product_string2int[product_id], dtype=torch.int64)
@@ -159,7 +210,8 @@ class  SentimentDataset(Dataset):
                       label=label,
                       text=text, 
                       sentence_idx=sentence_idx,
-                      mask=mask)
+                      mask=mask,
+                      sentence_matrix=sentence_matrix)
 
             documents.append(doc)
 
@@ -167,7 +219,7 @@ class  SentimentDataset(Dataset):
                 print("Processed {0} of {1} documents. ({2:.1f}%)".format(i, len(lines), i*100/len(lines)))
 
         pickle.dump(documents, open(cache_path, "wb"))
-        return document_list, documents
+        return documents
 
 
     def read_docs_from_cache(self, load_path):
@@ -178,7 +230,7 @@ class  SentimentDataset(Dataset):
     def __getitem__(self, idx):
        doc = self.documents[idx]
        return doc
-
+    
     def __len__(self):
         return len(self.documents)
     
@@ -193,5 +245,5 @@ test_file = './data/yelp14/test.txt'
 
 if __name__ == '__main__':
     """ Just to test. """
-    ds = SentimentDataset(train_file, userlist_filename, productlist_filename, wordlist_filename)
-    print(ds[0])
+    ds = SentimentDataset(train_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=True)
+    print(ds[0].sentence_matrix)
