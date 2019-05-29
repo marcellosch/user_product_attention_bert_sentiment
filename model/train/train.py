@@ -192,7 +192,7 @@ def train(model, train_dat, dev_dat, args):
         logging.info("***** Running evaluation on dev set *****")
         logging.info("  Num examples = %d", len(dev_dat))
         logging.info("  Batch size = %d", args.eval_batch_size)
-        dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, n_classes)
+        dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device)
         logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, dev_acc, dev_loss))
 
     # Save a trained model
