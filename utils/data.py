@@ -10,6 +10,7 @@ import numpy as np
 import zipfile
 import wget
 import pdb
+import numpy as np
 
 
 Word = namedtuple('Word', ['idx', 'id'])
@@ -238,11 +239,13 @@ class  SentimentDataset(Dataset):
                            max_sentence_count=max_sentence_count))
                                     
         documents = tmp
+        
 
+        document_chunks = [list(x) for x in np.array_split(documents, 100)]
         with open(cache_path, "wb") as f:
-            num_of_docs = len(documents)
-            pickle.dump(num_of_docs, f)
-            for doc in documents:
+            num_of_chunks = len(document_chunks)
+            pickle.dump(num_of_chunks, f)
+            for doc in document_chunks:
                 pickle.dump(doc, f)
 
         return documents
@@ -251,14 +254,14 @@ class  SentimentDataset(Dataset):
     def read_docs_from_cache(self, load_path):
         """ Loads the cached preprocessed documents from disk. """
 
-        documents = []
+        document_chunks = []
         
         with open(load_path, 'rb') as f:
-            num_of_docs = pickle.load(f)
-            for _ in range(num_of_docs):
-                documents.append(pickle.load(f))
+            num_of_chunks = pickle.load(f)
+            for _ in range(num_of_chunks):
+                document_chunks.append(pickle.load(f))
 
-        return documents
+        return list(np.concatenate(document_chunks))
 
 
     def __getitem__(self, idx):
