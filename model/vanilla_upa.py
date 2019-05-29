@@ -28,7 +28,7 @@ class VanillaUPA(torch.nn.Module):
         self.softmax = torch.nn.Softmax()
 
     def forward(self, batch):
-        user_ids, product_ids, sentence_matrix, max_sentence_count = batch.user_id, batch.product_id, batch.sentence_matrix, batch.max_sentence_count
+        user_ids, product_ids, _, _, _, _, sentence_matrix, max_sentence_count = batch
         user_embs = self.Uemb(user_ids)
         product_embs = self.Pemb(product_ids)
         word_embs = self.Wemb(sentence_matrix)
