@@ -18,6 +18,9 @@ Doc = namedtuple('Doc', ['user_id', 'product_id', 'label', 'text', 'sentence_idx
 CACHE_PATH = './cache/'
 DATASET_URL = 'http://www.thunlp.org/~chm/data/data.zip'
     
+def cat_collate(batch):
+    """ Concats the batches instead of stacking them like in the default_collate. """
+    return torch.cat(batch)
 
 class  SentimentDataset(Dataset):
     """ 
@@ -27,7 +30,6 @@ class  SentimentDataset(Dataset):
     train_set = SentimentDataset(train_file, userlist_filename, productlist_filename, wordlist_filename)
     dev_set = SentimentDataset(dev_file, userlist_filename, productlist_filename, wordlist_filename)
     test_set = SentimentDataset(test_file, userlist_filename, productlist_filename, wordlist_filename)
-
     """
 
     def __init__(self, document_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=False):
