@@ -226,8 +226,17 @@ class  SentimentDataset(Dataset):
             if i % 5000 == 0:
                 print("Processed {0} of {1} documents. ({2:.1f}%)".format(i, len(lines), i*100/len(lines)))
         
+        tmp = []
         for doc in documents:
-            doc.max_sentence_count = max_sentence_count
+            tmp.append(Doc(user_id=doc.user_id,
+                           product_id=doc.product_id,
+                           label=doc.label, 
+                           text=doc.text, 
+                           sentence_idx=doc.sentence_idx,
+                           mask=doc.mask,
+                           max_sentence_count=max_sentence_count))
+                                    
+        documents = tmp
 
         with open(cache_path, "wb") as f:
             num_of_docs = len(documents)
