@@ -56,7 +56,7 @@ class  SentimentDataset(Dataset):
         if not os.path.exists(CACHE_PATH):
             os.makedirs(CACHE_PATH)
 
-        document_cache_path = CACHE_PATH + '-'.join(document_file.split('/'))
+        document_cache_path = CACHE_PATH + document_file.split('/')[2]
         is_cached = os.path.isfile(document_cache_path)
         self.users, self.user_string2int = self.read_userlist(userlist_filename)
         self.products, self.product_string2int = self.read_productlist(productlist_filename)
@@ -225,16 +225,17 @@ class  SentimentDataset(Dataset):
 
             if i % 5000 == 0:
                 print("Processed {0} of {1} documents. ({2:.1f}%)".format(i, len(lines), i*100/len(lines)))
+
         self.max_sentence_count = max_sentence_count
 
         for label, field in self.fields:
             field = torch.stack(field)
-            torch.save(field,cache_path + "/"+ label)
+            torch.save(field,cache_path + "-" + label)
 
     def read_docs_from_cache(self, load_path):
         """ Loads the cached preprocessed documents from disk. """
         for label, field in self.fields:
-            field = torch.load(load_path + "/" + label )
+            field = torch.load(load_path + "-" + label )
 
     def __getitem__(self, idx):
        doc = tuple([field[idx] for _, field in self.fields[:-1]] + [self.max_sentence_count])
