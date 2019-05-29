@@ -1,7 +1,7 @@
 import torch
 import logging
-from user_product_attention import UserProductAttention
-from bert_word_embedding import BertWordEmbeddings
+from model.components.user_product_attention import UserProductAttention
+from model.components.bert_word_embeddings import BertWordEmbeddings
 
 log_format = '%(asctime)-10s: %(message)s'
 logging.basicConfig(level=logging.INFO, format=log_format)

@@ -2,10 +2,9 @@
 
 import unittest
 from model import *
-from modelbaselinebert import *
-from modelbaselineupa import *
-from model_simple_user_product_bert import SimpleUserProductBert
-
+from model.upa_bert import *
+from model.vanilla_bert import *
+from model.vanilla_upa import *
 
 class TestModel(unittest.TestCase):
     def test_UserProductAttention_dimensions(self):
@@ -43,11 +42,6 @@ class TestModel(unittest.TestCase):
         out = vupa(batch)
         print(out.shape)
         #self.assertEqual(out.shape, (5, 5))
-
-    def test_BertWordEmbeddings(self):
-        from bert_word_embedding import BertWordEmbeddings
-        b = BertWordEmbeddings.from_pretrained('bert-base-uncased')
-
 
 if __name__ == '__main__':
     unittest.main()

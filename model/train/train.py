@@ -1,19 +1,14 @@
-#! /usr/bin/python3
-import pdb
 import torch
 from pathlib import Path
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler
 from torch.nn import CrossEntropyLoss
 from tqdm import tqdm
 from pytorch_pretrained_bert.optimization import BertAdam, WarmupLinearSchedule
-from model_simple_user_product_bert import SimpleUserProductBert
-from data import SentimentDataset, userlist_filename, productlist_filename, wordlist_filename, train_file, test_file
+from utils.data import SentimentDataset, userlist_filename, productlist_filename, wordlist_filename, train_file, test_file
 from argparse import ArgumentParser
 import logging
 import random
 import numpy as np
-
-args = dict()
 
 def eval_on_data(model, data, args, device, n_classes):
     # Run prediction for full data
@@ -60,8 +55,7 @@ def eval_on_data(model, data, args, device, n_classes):
 
     return accuracy, eval_loss
 
-
-def makeParser():
+def parse_args():
     # Argument parsing
     parser = ArgumentParser()
     # parser.add_argument('--preprocessed_data', type=Path, required=True)
@@ -83,7 +77,9 @@ def makeParser():
 
     args = parser.parse_args()
 
-def train(model, train_dat, dev_dat):
+    return args
+
+def train(model, train_dat, dev_dat, args):
     log_format = '%(asctime)-10s: %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_format)
 
@@ -204,19 +200,3 @@ def train(model, train_dat, dev_dat):
     model_to_save = model.module if hasattr(model, 'module') else model  # Only save the model it-self
     output_model_file = args.output_dir / "pytorch_model.bin"
     torch.save(model_to_save.state_dict(), str(output_model_file))
-
-
-if __name__ == "__main__":
-    makeParser()
-
-    # Read training and test datasets
-    train_dat = SentimentDataset(train_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=args.force_document_processing)
-    dev_dat = SentimentDataset(test_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=args.force_document_processing)
-
-    # Determine model parameter
-    n_user = len(train_dat.users)
-    n_product = len(train_dat.products)
-    n_classes = 5
-
-    model = SimpleUserProductBert(n_user, n_product, n_classes, args.user_size, args.product_size, args.attention_hidden_size)
-    main(model, train_dat, dev_dat)

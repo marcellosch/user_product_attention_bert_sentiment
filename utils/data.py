@@ -15,7 +15,7 @@ import pdb
 Word = namedtuple('Word', ['idx', 'id'])
 Doc = namedtuple('Doc', ['user_id', 'product_id', 'label', 'text', 'sentence_idx', 'mask', 'sentence_matrix'])
 
-CACHE_PATH = './cache/'
+CACHE_PATH = '../cache/'
 DATASET_URL = 'http://www.thunlp.org/~chm/data/data.zip'
     
 def cat_collate(batch):
