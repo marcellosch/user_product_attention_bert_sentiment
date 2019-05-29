@@ -1,5 +1,5 @@
 #! /usr/bin/python3
-from model.train.train import parse_args, SentimentDataset, main
+from model.train.train import parse_args, SentimentDataset, train
 from model.vanilla_bert import VanillaBert
 
 
@@ -21,4 +21,4 @@ if __name__ == "__main__":
     n_classes = 5
 
     model = VanillaBert(n_classes)
-    main(model, train_dat, dev_dat)
+    train(model, train_dat, dev_dat)
