@@ -57,16 +57,16 @@ class  SentimentDataset(Dataset):
             os.makedirs(CACHE_PATH)
 
         document_cache_path = CACHE_PATH + document_file.split('/')[2]
-        is_cached = os.path.isfile(document_cache_path)
+        is_cached = sum([os.path.isfile(document_cache_path + "-" + label ) for label ,_ in self.fields]) == len(self.fields)
         self.users, self.user_string2int = self.read_userlist(userlist_filename)
         self.products, self.product_string2int = self.read_productlist(productlist_filename)
         self.word_list, self.vocabulary = self.read_vocabulary(wordlist_filename)
         if not is_cached or force_no_cache:
             self.read_documents(document_file, document_cache_path)
-            print("Preprocessed {0} documents and cached to disk.".format(len(self.documents)))
+            print("Preprocessed {0} documents and cached to disk.".format(len(self.user_id)))
         else:
             self.read_docs_from_cache(document_cache_path)
-            print("Loaded {0} documents from disk.".format(len(self.documents)))
+            print("Loaded {0} documents from disk.".format(len(self.user_id)))
 
 
     def preprocess(self, text, sentence_delimeter='.'):
@@ -226,11 +226,14 @@ class  SentimentDataset(Dataset):
             if i % 5000 == 0:
                 print("Processed {0} of {1} documents. ({2:.1f}%)".format(i, len(lines), i*100/len(lines)))
 
-        self.max_sentence_count = len(self.label) * [torch.tensor(max_sentence_count, dtype=torch.int64)]
+        self.max_sentence_count = torch.tensor(max_sentence_count)
 
-        for label, field in self.fields:
+        for label, field in self.fields[:-1]:
+            print(label)
             field = torch.stack(field)
             torch.save(field,cache_path + "-" + label)
+        torch.save(self.max_sentence_count, cache_path + "-" + label)
+        
 
     def read_docs_from_cache(self, load_path):
         """ Loads the cached preprocessed documents from disk. """
