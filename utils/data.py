@@ -258,7 +258,7 @@ class  SentimentDataset(Dataset):
             for _ in range(num_of_docs):
                 documents.append(pickle.load(f))
 
-        return pickle.load(open(load_path, "rb"))
+        return documents
 
 
     def __getitem__(self, idx):
