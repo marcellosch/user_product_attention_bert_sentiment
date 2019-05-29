@@ -226,7 +226,7 @@ class  SentimentDataset(Dataset):
             if i % 5000 == 0:
                 print("Processed {0} of {1} documents. ({2:.1f}%)".format(i, len(lines), i*100/len(lines)))
 
-        self.max_sentence_count = len(self.label) * [torch.tensor(max_sentence_count, dtype=torch.int64)]
+        self.max_sentence_count = len(self.label) * [torch.tensor([max_sentence_count], dtype=torch.int64)]
 
         for label, field in self.fields:
             field = torch.stack(field)
