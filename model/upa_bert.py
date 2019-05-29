@@ -18,6 +18,7 @@ class UPABert(torch.nn.Module):
         self.sentence_attention = UserProductAttention()
         self.linear = torch.nn.Linear(self.hidden_size, self.n_classes)
         self.softmax = torch.nn.Softmax()
+
     def forward(self, input_ids, input_mask, user_ids, product_ids, sentence_offsets):
         """ Inputs:
             `input_ids`: Tensor of shape [batch_size, max_seq_length] containing one documents word ids per row
@@ -41,3 +42,5 @@ class UPABert(torch.nn.Module):
         # this is called in the pytorch example, I dont't know why
         self.bert.train()
 
+    def eval(self):
+        self.bert.eval()

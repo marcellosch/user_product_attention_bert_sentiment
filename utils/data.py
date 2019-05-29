@@ -13,7 +13,7 @@ import pdb
 
 
 Word = namedtuple('Word', ['idx', 'id'])
-Doc = namedtuple('Doc', ['user_id', 'product_id', 'label', 'text', 'sentence_idx', 'mask', 'sentence_matrix'])
+Doc = namedtuple('Doc', ['user_id', 'product_id', 'label', 'text', 'sentence_idx', 'mask', 'sentence_matrix', 'max_sentence_count'])
 
 CACHE_PATH = '../cache/'
 DATASET_URL = 'http://www.thunlp.org/~chm/data/data.zip'
@@ -194,6 +194,7 @@ class  SentimentDataset(Dataset):
         lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))
         documents = []
         self.count_long_text = 0
+        max_sentence_count = 0
         for i, line in enumerate(lines):
             user_id, product_id, label, text = line
 
@@ -207,25 +208,46 @@ class  SentimentDataset(Dataset):
             text = torch.tensor(text, dtype=torch.int64)
             sentence_idx = torch.tensor(sentence_idx, dtype=torch.int64)
             mask = torch.tensor(mask, dtype=torch.int64)
+
+            if len(sentence_idx) > max_sentence_count:
+                max_sentence_count = len(sentence_idx)
+ 
             doc = Doc(user_id=user_id,
                       product_id=product_id,
                       label=label,
                       text=text, 
                       sentence_idx=sentence_idx,
                       mask=mask,
-                      sentence_matrix=sentence_matrix)
+                      sentence_matrix=sentence_matrix,
+                      max_sentence_count=0)
 
             documents.append(doc)
 
             if i % 5000 == 0:
                 print("Processed {0} of {1} documents. ({2:.1f}%)".format(i, len(lines), i*100/len(lines)))
+        
+        for doc in documents:
+            doc.max_sentence_count = max_sentence_count
 
-        pickle.dump(documents, open(cache_path, "wb"))
+        with open(cache_path, "wb") as f:
+            num_of_docs = len(documents)
+            pickle.dump(num_of_docs, f)
+            for doc in documents:
+                pickle.dump(doc, f)
+
         return documents
 
 
     def read_docs_from_cache(self, load_path):
         """ Loads the cached preprocessed documents from disk. """
+
+        documents = []
+        
+        with open(load_path, 'rb') as f:
+            num_of_docs = pickle.load(f)
+            for _ in range(num_of_docs):
+                documents.append(pickle.load(f))
+
         return pickle.load(open(load_path, "rb"))
 
 

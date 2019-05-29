@@ -23,6 +23,7 @@ class SimpleUPABert(torch.nn.Module):
         self.word_attention = UserProductAttention(user_size, product_size, attention_hidden_size, hidden_size)
         self.linear = torch.nn.Linear(self.hidden_size, self.n_classes)
         self.softmax = torch.nn.Softmax()
+        
     def forward(self, batch):
         """ Inputs:
             `input_ids`: Tensor of shape [batch_size, max_seq_length] containing one documents word ids per row
@@ -32,7 +33,7 @@ class SimpleUPABert(torch.nn.Module):
             `product_ids`: torch.LongTensor of shape [batch_size] that denotes the product ids for documents
             `sentence_offsets`: list of batch_size iterables where each contains the integer offsets of the sentence starts in document
         """
-        user_ids, product_ids, _, input_ids, sentence_idx, input_mask, _ = batch
+        user_ids, product_ids, input_ids, input_mask = batch.user_id, batch.product_id, batch.text, batch.mask
         user_embs = self.Uemb(user_ids)
         product_embs = self.Pemb(product_ids)
         bert_out, _ = self.bert(input_ids, attention_mask=input_mask, output_all_encoded_layers=False)
