@@ -22,23 +22,27 @@ class TestModel(unittest.TestCase):
         input_mask = torch.ones(2, 512).long()
         user_ids = (torch.rand(2) * 100).long()
         product_ids = (torch.rand(2)*200).long()
-        out = supb(input_ids, input_mask, user_ids, product_ids)
+        batch = (user_ids, product_ids, None, input_ids, None, input_mask, None)
+        out = supb(batch)
         self.assertEqual(out.shape, (2, 5))
 
     def test_VanillaBert(self):
         vbert = VanillaBert(n_classes=5)
         input_ids = (torch.rand(2, 512)*800).long()
         input_mask = torch.ones(2, 512).long()
-        out = vbert(input_ids, input_mask)
+        batch = (None, None, None, input_ids, None, input_mask, None)
+        out = vbert(batch)
         self.assertEqual(out.shape, (2, 5))
 
     def test_VanillaUPA(self):
-        vupa = VanillaUPA(n_user=100, n_product=200,
-                          n_words=30522, n_classes=5)
-        input_ids = (torch.rand(2, 512)*800).long()
-        input_mask = torch.ones(2, 512).long()
-        out = vupa(input_ids, input_mask)
-        self.assertEqual(out.shape, (2, 5))
+        vupa = VanillaUPA(n_user=100, n_product=200, n_classes=5, max_sentence_count=2)
+        user_ids = (torch.rand(10 * 5) * 100).long()
+        product_ids = (torch.rand(10 * 5) * 200).long()
+        sentence_matrix = (torch.rand(10 * 5, 5)).long()
+        batch = (user_ids, product_ids, None, None, None, None, sentence_matrix)
+        out = vupa(batch)
+        print(out.shape)
+        #self.assertEqual(out.shape, (5, 5))
 
     def test_BertWordEmbeddings(self):
         from bert_word_embedding import BertWordEmbeddings

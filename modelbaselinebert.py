@@ -15,12 +15,9 @@ class VanillaBert(torch.nn.Module):
         self.bert = BertModel.from_pretrained("bert-base-uncased")
         self.linear = torch.nn.Linear(self.hidden_size, self.n_classes)
         self.softmax = torch.nn.Softmax()
-    def forward(self, input_ids, input_mask):
-        """ Inputs:
-            `input_ids`: Tensor of shape [batch_size, max_seq_length] containing one documents word ids per row
-            `input_mask`: torch.LongTensor of shape [batch_size, max_seq_length] with indices in [0,1]. The mask is used to mask sentences that are shorter than max_seq_length
-        """
-        bert_out, _ = self.bert(input_ids, output_all_encoded_layers=False)
+    def forward(self, batch):
+        _, _, _, input_ids, _, input_mask, _ = batch
+        bert_out, _ = self.bert(input_ids, attention_mask=input_mask, output_all_encoded_layers=False)
         linear_out = self.linear(bert_out[:,0,:])
         softmax_out = self.softmax(linear_out)
         return softmax_out

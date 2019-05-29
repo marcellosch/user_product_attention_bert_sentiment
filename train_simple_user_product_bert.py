@@ -13,6 +13,7 @@ import logging
 import random
 import numpy as np
 
+args = dict()
 
 def eval_on_data(model, data, args, device, n_classes):
     # Run prediction for full data
@@ -29,7 +30,7 @@ def eval_on_data(model, data, args, device, n_classes):
         batch = tuple(t.to(device) for t in batch)
         label = batch[2]
         #user_id, product_id, label, text, sentence_idx, mask = batch
-            
+
         #user_id, product_id, label, text, sentence_idx, mask = batch
         #user_id, product_id, label, text, sentence_idx, mask = user_id.to(device), product_id.to(device), label.to(device), text.to(device), sentence_idx.to(device), mask.to(device)
 
@@ -39,7 +40,7 @@ def eval_on_data(model, data, args, device, n_classes):
         # create eval loss
         loss_function = CrossEntropyLoss()
         tmp_eval_loss = loss_function(logits.view(-1, n_classes), label.view(-1))
-    
+
         eval_loss += tmp_eval_loss.mean().item()
         nb_eval_steps += 1
         if len(preds) == 0:
@@ -52,26 +53,21 @@ def eval_on_data(model, data, args, device, n_classes):
     preds = preds[0]
     preds = np.argmax(preds, axis=1)
     labels = np.array(labels)
-    
 
     assert len(preds) == len(labels)
     accuracy = (preds == labels).mean()
     eval_loss = eval_loss / nb_eval_steps
-    
+
     return accuracy, eval_loss
 
 
-def main(modelClass, datasetClass):
-    log_format = '%(asctime)-10s: %(message)s'
-    logging.basicConfig(level=logging.INFO, format=log_format)
-
-
+def makeParser():
     # Argument parsing
     parser = ArgumentParser()
     # parser.add_argument('--preprocessed_data', type=Path, required=True)
     parser.add_argument('--output_dir', type=Path, required=True)
     parser.add_argument("--epochs", type=int, default=3, help="Number of epochs to train for")
-    parser.add_argument("--no_cuda", action='store_true', help="Wheter to use CUDA")
+    parser.add_argument("--no_cuda", action='store_true', help="Whether or not to use CUDA")
     parser.add_argument("--gradient_accumulation_steps", type=int, default=1)
     parser.add_argument("--train_batch_size", default=16, type=int)
     parser.add_argument("--eval_batch_size", default=16, type=int)
@@ -87,17 +83,11 @@ def main(modelClass, datasetClass):
 
     args = parser.parse_args()
 
-    # Read training and test datasets
-    train_dat = datasetClass(train_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=args.force_document_processing)
-    dev_dat = datasetClass(test_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=args.force_document_processing)
-
-    # Determine model parameter
-    n_user = len(train_dat.users)
-    n_product = len(train_dat.products)
-    n_classes = 5
+def train(model, train_dat, dev_dat):
+    log_format = '%(asctime)-10s: %(message)s'
+    logging.basicConfig(level=logging.INFO, format=log_format)
 
     # Initialize model
-    model = modelClass(n_user, n_product, n_classes, args.user_size, args.product_size, args.attention_hidden_size)
     if args.fp16:
         model.half()
 
@@ -121,7 +111,7 @@ def main(modelClass, datasetClass):
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
     # Calculate total training sample number:
-    total_train_examples = args.epochs * len(train_dat) 
+    total_train_examples = args.epochs * len(train_dat)
     num_train_optimization_steps = int(total_train_examples / args.train_batch_size / args.gradient_accumulation_steps)
 
     # Prepare optimizer
@@ -180,7 +170,7 @@ def main(modelClass, datasetClass):
 
                 prediction = model(batch)
                 #prediction = model(text, mask, user_id, product_id)
-                    
+
                 loss = criterion(prediction, label)
                 if n_gpu > 1:
                     loss = loss.mean() # mean() to average on multi-gpu.
@@ -202,10 +192,10 @@ def main(modelClass, datasetClass):
                     global_step += 1
                 # dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, n_classes)
                 model.train()
-        
+
         logging.info("***** Running evaluation on dev set *****")
         logging.info("  Num examples = %d", len(dev_dat))
-        logging.info("  Batch size = %d", args.eval_batch_size)    
+        logging.info("  Batch size = %d", args.eval_batch_size)
         dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, n_classes)
         logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, dev_acc, dev_loss))
 
@@ -217,4 +207,16 @@ def main(modelClass, datasetClass):
 
 
 if __name__ == "__main__":
-    main(SimpleUserProductBert, SentimentDataset)
+    makeParser()
+
+    # Read training and test datasets
+    train_dat = SentimentDataset(train_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=args.force_document_processing)
+    dev_dat = SentimentDataset(test_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=args.force_document_processing)
+
+    # Determine model parameter
+    n_user = len(train_dat.users)
+    n_product = len(train_dat.products)
+    n_classes = 5
+
+    model = SimpleUserProductBert(n_user, n_product, n_classes, args.user_size, args.product_size, args.attention_hidden_size)
+    main(model, train_dat, dev_dat)
