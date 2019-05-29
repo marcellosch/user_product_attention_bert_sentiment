@@ -35,9 +35,9 @@ class TestModel(unittest.TestCase):
         self.assertEqual(out.shape, (2, 5))
 
     def test_VanillaUPA(self):
-        vupa = VanillaUPA(n_user=100, n_product=200, n_classes=5, max_sentence_count=2)
-        user_ids = (torch.rand(10 * 5) * 100).long()
-        product_ids = (torch.rand(10 * 5) * 200).long()
+        vupa = VanillaUPA(n_user=100, n_product=200, n_classes=5, max_sentence_count=10, hidden_size=768)
+        user_ids = (torch.rand(5)).long()
+        product_ids = (torch.rand(5)).long()
         sentence_matrix = (torch.rand(10 * 5, 5)).long()
         batch = (user_ids, product_ids, None, None, None, None, sentence_matrix)
         out = vupa(batch)
