@@ -10,10 +10,12 @@ import logging
 import random
 import numpy as np
 
+
 def eval_on_data(model, data, args, device):
     # Run prediction for full data
     sampler = SequentialSampler(data)
-    eval_dataloader = DataLoader(data, sampler=sampler, batch_size=args.eval_batch_size)
+    eval_dataloader = DataLoader(
+        data, sampler=sampler, batch_size=args.eval_batch_size)
 
     model.eval()
     eval_loss = 0
@@ -55,13 +57,16 @@ def eval_on_data(model, data, args, device):
 
     return accuracy, eval_loss
 
+
 def parse_args():
     # Argument parsing
     parser = ArgumentParser()
     # parser.add_argument('--preprocessed_data', type=Path, required=True)
     parser.add_argument('--output_dir', type=Path, required=True)
-    parser.add_argument("--epochs", type=int, default=3, help="Number of epochs to train for")
-    parser.add_argument("--no_cuda", action='store_true', help="Whether or not to use CUDA")
+    parser.add_argument("--epochs", type=int, default=3,
+                        help="Number of epochs to train for")
+    parser.add_argument("--no_cuda", action='store_true',
+                        help="Whether or not to use CUDA")
     parser.add_argument("--gradient_accumulation_steps", type=int, default=1)
     parser.add_argument("--train_batch_size", default=16, type=int)
     parser.add_argument("--eval_batch_size", default=16, type=int)
@@ -70,14 +75,19 @@ def parse_args():
     parser.add_argument("--warmup_proportion", default=0.1, type=float)
     parser.add_argument("--learning_rate", default=3e-5, type=float)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--user_size", type=int, default=200, help="User embedding dimension")
-    parser.add_argument("--product_size", type=int, default=200, help="Product embedding dimension")
-    parser.add_argument("--attention_hidden_size", type=int, default=200, help="Attention hidden state dimension")
-    parser.add_argument("--force_document_processing", action="store_true", help="Force document preprocessing")
+    parser.add_argument("--user_size", type=int, default=200,
+                        help="User embedding dimension")
+    parser.add_argument("--product_size", type=int,
+                        default=200, help="Product embedding dimension")
+    parser.add_argument("--attention_hidden_size", type=int,
+                        default=200, help="Attention hidden state dimension")
+    parser.add_argument("--force_document_processing",
+                        action="store_true", help="Force document preprocessing")
 
     args = parser.parse_args()
 
     return args
+
 
 def train(model, train_dat, dev_dat, args):
     log_format = '%(asctime)-10s: %(message)s'
@@ -88,7 +98,8 @@ def train(model, train_dat, dev_dat, args):
         model.half()
 
     # Check for CUDA
-    device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available()
+                          and not args.no_cuda else "cpu")
     n_gpu = torch.cuda.device_count()
     logging.info("device: {} n_gpu: {}".format(device, n_gpu))
     # TODO: check out distributed training!
@@ -108,7 +119,8 @@ def train(model, train_dat, dev_dat, args):
 
     # Calculate total training sample number:
     total_train_examples = args.epochs * len(train_dat)
-    num_train_optimization_steps = int(total_train_examples / args.train_batch_size / args.gradient_accumulation_steps)
+    num_train_optimization_steps = int(
+        total_train_examples / args.train_batch_size / args.gradient_accumulation_steps)
 
     # Prepare optimizer
     param_optimizer = list(model.named_parameters())
@@ -117,7 +129,8 @@ def train(model, train_dat, dev_dat, args):
     optimizer_grouped_parameters = [
         {'params': [p for n, p in param_optimizer if not any(nd in n for nd in no_decay)],
             'weight_decay': 0.01},
-        {'params': [p for n, p in param_optimizer if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+        {'params': [p for n, p in param_optimizer if any(
+            nd in n for nd in no_decay)], 'weight_decay': 0.0}
     ]
 
     if args.fp16:
@@ -127,23 +140,23 @@ def train(model, train_dat, dev_dat, args):
         except ImportError:
             raise ImportError("apex not installed")
         optimizer = FusedAdam(optimizer_grouped_parameters,
-                lr=args.learning_rate,
-                bias_correction=False,
-                max_grad_norm=1.0)
+                              lr=args.learning_rate,
+                              bias_correction=False,
+                              max_grad_norm=1.0)
         if args.loss_scale == 0:
             optimizer = FP16_Optimizer(optimizer, dynamic_loss_scale=True)
         else:
-            optimizer = FP16_Optimizer(optimizer, static_loss_scale=args.loss_scale)
+            optimizer = FP16_Optimizer(
+                optimizer, static_loss_scale=args.loss_scale)
             warmup_linear = WarmupLinearSchedule(warmup=args.warmup_proportion,
-                    t_total=num_train_optimization_steps)
+                                                 t_total=num_train_optimization_steps)
     else:
         optimizer = BertAdam(optimizer_grouped_parameters,
-                lr=args.learning_rate,
-                warmup=args.warmup_proportion,
-                t_total=num_train_optimization_steps)
+                             lr=args.learning_rate,
+                             warmup=args.warmup_proportion,
+                             t_total=num_train_optimization_steps)
 
     criterion = torch.nn.NLLLoss()
-
 
     global_step = 0
     logging.info("***** Running training *****")
@@ -155,7 +168,8 @@ def train(model, train_dat, dev_dat, args):
 
     for epoch in range(args.epochs):
         train_sampler = RandomSampler(train_dat)
-        train_dataloader = DataLoader(train_dat, sampler=train_sampler, batch_size=args.train_batch_size)
+        train_dataloader = DataLoader(
+            train_dat, sampler=train_sampler, batch_size=args.train_batch_size)
         tr_loss = 0
         nb_tr_steps = 0
         with tqdm(total=len(train_dataloader), desc=f"Epoch {epoch}") as pbar:
@@ -170,7 +184,7 @@ def train(model, train_dat, dev_dat, args):
 
                 loss = criterion(prediction, label)
                 if n_gpu > 1:
-                    loss = loss.mean() # mean() to average on multi-gpu.
+                    loss = loss.mean()  # mean() to average on multi-gpu.
                 if args.gradient_accumulation_steps > 1:
                     loss = loss / args.gradient_accumulation_steps
                 if args.fp16:
@@ -193,10 +207,12 @@ def train(model, train_dat, dev_dat, args):
         logging.info("  Num examples = %d", len(dev_dat))
         logging.info("  Batch size = %d", args.eval_batch_size)
         dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device)
-        logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, dev_acc, dev_loss))
+        logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(
+            epoch, dev_acc, dev_loss))
 
     # Save a trained model
     logging.info("** ** * Saving fine-tuned model ** ** * ")
-    model_to_save = model.module if hasattr(model, 'module') else model  # Only save the model it-self
+    model_to_save = model.module if hasattr(
+        model, 'module') else model  # Only save the model it-self
     output_model_file = args.output_dir / "pytorch_model.bin"
     torch.save(model_to_save.state_dict(), str(output_model_file))

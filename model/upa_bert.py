@@ -31,9 +31,11 @@ class UPABert(torch.nn.Module):
         user_embs = self.Uemb(user_ids)
         product_embs = self.Pemb(product_ids)
         bert_out, _ = self.bert(input_ids, output_all_encoded_layers=False)
-        word_attention_out = self.word_attention(bert_out, user_embs, product_embs, sentence_offsets)
+        word_attention_out = self.word_attention(
+            bert_out, user_embs, product_embs, sentence_offsets)
         lstm_out, _ = self.lstm(word_attention_out)
-        sentence_attention_out = self.sentence_attention(lstm_out, user_embs, product_embs) 
+        sentence_attention_out = self.sentence_attention(
+            lstm_out, user_embs, product_embs)
         linear_out = self.linear(sentence_attention_out)
         softmax_out = self.softmax(linear_out)
         return softmax_out

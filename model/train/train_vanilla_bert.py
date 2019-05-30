@@ -14,8 +14,10 @@ if __name__ == "__main__":
     test_file = './data/yelp14/test.txt'
 
     # Read training and test datasets
-    train_dat = SentimentDataset(train_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=args.force_document_processing)
-    dev_dat = SentimentDataset(test_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=args.force_document_processing)
+    train_dat = SentimentDataset(train_file, userlist_filename, productlist_filename,
+                                 wordlist_filename, force_no_cache=args.force_document_processing)
+    dev_dat = SentimentDataset(test_file, userlist_filename, productlist_filename,
+                               wordlist_filename, force_no_cache=args.force_document_processing)
 
     # Determine model parameter
     n_classes = 5

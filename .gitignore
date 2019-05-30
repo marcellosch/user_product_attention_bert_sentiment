@@ -1,3 +1,6 @@
 data
 simple
-model/__pycache__
+__pycache__/
+tags
+
+cache/

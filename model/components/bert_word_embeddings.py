@@ -11,9 +11,8 @@ import shutil
 
 log_format = '%(asctime)-10s: %(message)s'
 logging.basicConfig(level=logging.INFO, format=log_format)
- 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 
 class BertWordEmbeddings(BertEmbeddings):
@@ -106,8 +105,9 @@ class BertWordEmbeddings(BertEmbeddings):
         if from_tf:
             # Directly load from a TensorFlow checkpoint
             weights_path = os.path.join(serialization_dir, TF_WEIGHTS_NAME)
-            raise RuntimeError("Loading from tensorflow weights is not supported")
-            #return load_tf_weights_in_bert(model, weights_path)
+            raise RuntimeError(
+                "Loading from tensorflow weights is not supported")
+            # return load_tf_weights_in_bert(model, weights_path)
         # Load from a PyTorch state_dict
         old_keys = []
         new_keys = []
@@ -155,4 +155,3 @@ class BertWordEmbeddings(BertEmbeddings):
         #                       model.__class__.__name__, "\n\t".join(error_msgs)))
         # return model
         return emb
-
