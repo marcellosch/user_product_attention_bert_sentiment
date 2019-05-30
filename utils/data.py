@@ -121,32 +121,23 @@ class SentimentDataset(Dataset):
         token_ids = self.tokenizer.convert_tokens_to_ids(tokenized)
         mask = [1 if token != 0 else 0 for token in token_ids]
 
-        # TODO remove hardcoded values
-        max_sentence_length = 512
-        max_num_of_sentences = 20
-        sentence_matrix = self.create_sentence_matrix(
-            token_ids, sentence_idx, max_sentence_length, max_num_of_sentences)
+        return token_ids, sentence_idx, mask
 
-        return token_ids, sentence_idx, mask, sentence_matrix
-
-    def create_sentence_matrix(self, token_ids, sentence_idx, max_sentence_length, max_num_of_sentences):
+    def create_sentence_matrix(self, token_ids, sentence_idx):
         """
         Args:
             token_ids (list of int): list containing the id of each token.
             sentence_idx (list of (int, int) ): list containing the beginning and end of each sentence. 
-            max_sentence_length (int): max number of tokens per sentence
-            max_sum_of_sentences (int): max number of sentences per document
 
         Returns:
-            sentence_matrix (tensor of dimensions (max_num_of_sentences, max_sentence_length) ): matrix where each row corresponds to the token ids of a sentence.
-                                                                                                 Sentences and document are padded.
+            sentence_matrix (tensor of dimensions (max_sentences_per_doc, max_sentence_length) ): matrix where each row corresponds to the token ids of a sentence.
+                                                                                                  Sentences and document are padded.
         """
 
         document = []
         for begin, end in sentence_idx:
-            sentence_tokens = token_ids[begin:end]
-            padded_sntence_tokens = (
-                sentence_tokens + max_sentence_length * [0])[:max_sentence_length]
+            sentence_tokens = list(token_ids)[begin:end]
+            padded_sntence_tokens = (sentence_tokens + self.max_sentence_length * [0])[:self.max_sentence_length]
             document.append(torch.tensor(
                 padded_sntence_tokens, dtype=torch.int64))
 
@@ -154,9 +145,9 @@ class SentimentDataset(Dataset):
                 break
 
         dummy_sentence = torch.tensor(
-            max_sentence_length * [0], dtype=torch.int64)
-        padded_document = (document + max_num_of_sentences *
-                           [dummy_sentence])[:max_num_of_sentences]
+            self.max_sentence_length * [0], dtype=torch.int64)
+        padded_document = (document + self.max_sentences_per_doc *
+                           [dummy_sentence])[:self.max_sentences_per_doc]
 
         sentence_matrix = torch.stack(padded_document)
 
@@ -215,6 +206,7 @@ class SentimentDataset(Dataset):
         lines = list(map(lambda x: x.split('\t\t'),
                          open(filename).readlines()))
         # lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))
+
         self.count_long_text = 0
         max_sentence_count = 0
         for i, line in enumerate(lines):
@@ -222,7 +214,7 @@ class SentimentDataset(Dataset):
 
             label = int(label)-1  # classes are from 0-4 but starts from 1-5
 
-            text, sentence_idx, mask, sentence_matrix = self.preprocess(
+            text, sentence_idx, mask = self.preprocess(
                 text, sentence_delimeter='<sssss>')
 
             self.documents["user_id"].append(torch.tensor(
@@ -234,7 +226,6 @@ class SentimentDataset(Dataset):
             self.documents["sentence_idx"].append(torch.tensor(
                 sentence_idx, dtype=torch.int64))
             self.documents["mask"].append(torch.tensor(mask, dtype=torch.int64))
-            self.documents["sentence_matrix"].append(sentence_matrix)
 
             if len(sentence_idx) > max_sentence_count:
                 max_sentence_count = len(sentence_idx)
@@ -242,9 +233,34 @@ class SentimentDataset(Dataset):
             if i % 5000 == 0:
                 print("Processed {0} of {1} documents. ({2:.1f}%)".format(
                     i, len(lines), i*100/len(lines)))
+        
+        flat_sentence_idx = []
+        for doc_sent_idx in self.documents["sentence_idx"]:
+            for idx in doc_sent_idx:
+                flat_sentence_idx.append(idx)
+
+        all_sentence_length = [end - begin for begin, end in flat_sentence_idx]
+        self.max_sentence_length = int(max(all_sentence_length))
+
+        tmp = []
+        for i, s in enumerate(self.documents["sentence_idx"]):
+            tmp.append([])
+            for idx in s:
+                if idx[0] != -1:
+                    tmp[i].append(idx)
+        
+        all_sentence_count = [len(s) for s in tmp]
+        self.max_sentences_per_doc = int(max(all_sentence_count))
+
+        for i in range(len(self.documents["user_id"])):
+            self.documents["sentence_matrix"].append(self.create_sentence_matrix(
+                self.documents["text"][i],
+                self.documents["sentence_idx"][i]
+            ))
+
 
         self.documents["max_sentence_count"] = torch.tensor(max_sentence_count, dtype=torch.int64)
-
+        
         for label in self.fields[:-1]:
             with open(cache_path + "-" + label, 'wb') as f:
                 pickle.dump(len(self.documents['user_id']), f)
@@ -270,7 +286,7 @@ class SentimentDataset(Dataset):
 
     def __getitem__(self, idx):
         doc = [self.documents[label][idx] for label in self.fields[:-1]
-                     ] + [self.documents["max_sentence_count"]]
+                     ] + [self.documents["max_sentence_count"]] 
         return doc
 
     def __len__(self):
@@ -289,4 +305,6 @@ if __name__ == '__main__':
     """ Just to test. """
     ds = SentimentDataset(train_file, userlist_filename,
                           productlist_filename, wordlist_filename, force_no_cache=True)
-    print(ds[0].sentence_matrix)
+    print("Max number of sentences per document: {0}".format(len(ds.documents["sentence_matrix"][0])))
+    print("Max number of words per sentence: {0}".format(len(ds.documents["sentence_matrix"][0][0])))
+    # print(ds.documents["sentence_matrix"][0])
