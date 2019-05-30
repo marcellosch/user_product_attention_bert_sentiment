@@ -41,7 +41,7 @@ class TestModel(unittest.TestCase):
         product_ids = (torch.rand(5)).long()
         sentence_matrix = (torch.rand(10 * 5, 5)).long()
         batch = (user_ids, product_ids, None,
-                 None, None, None, sentence_matrix, 5)
+                 None, None, None, sentence_matrix, 10)
         out = vupa(batch)
         print(out.shape)
         #self.assertEqual(out.shape, (5, 5))

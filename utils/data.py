@@ -17,22 +17,22 @@ Word = namedtuple('Word', ['idx', 'id'])
 Doc = namedtuple('Doc', ['user_id', 'product_id', 'label', 'text',
                          'sentence_idx', 'mask', 'sentence_matrix', 'max_sentence_count'])
 
-CACHE_PATH = 'datadrive/cache/'
+CACHE_PATH = '/datadrive/cache/'
 DATASET_URL = 'http://www.thunlp.org/~chm/data/data.zip'
 
 @classmethod
 def cat_collate(cls, l):
     """ Concats the batches instead of stacking them like in the default_collate. """
-    
+
     ret = torch.stack(l)
     pdb.set_trace()
     return ret
-    
+
 
 
 class SentimentDataset(Dataset):
-    """ 
-    Represents the sentiment dataset containing IMDB, Yelp13 and Yelp14. 
+    """
+    Represents the sentiment dataset containing IMDB, Yelp13 and Yelp14.
     Has to initialized for each set. Example:
 
     train_set = SentimentDataset(train_file, userlist_filename, productlist_filename, wordlist_filename)
@@ -92,9 +92,9 @@ class SentimentDataset(Dataset):
 
         Returns:
             token_ids (list of int): list containing the id of each token.
-            sentence_idx (list of (int, int) ): list containing the beginning and end of each sentence. 
+            sentence_idx (list of (int, int) ): list containing the beginning and end of each sentence.
             mask (list of int): list of ones and zeros.
-            sentence_matrix: matrix with dimensions (max_num_sentences, max_sequence_length). 
+            sentence_matrix: matrix with dimensions (max_num_sentences, max_sequence_length).
                              Each entry represents the token embedding id.
         """
         text = text.replace(sentence_delimeter, '[SEP]')
@@ -190,8 +190,8 @@ class SentimentDataset(Dataset):
     def read_documents(self, filename, cache_path):
         """
         Read reviews from file with each line containing:
-        - user_id 
-        - product_id 
+        - user_id
+        - product_id
         - review text seperated with double tabs('\t\t').
 
         Args:
@@ -265,7 +265,7 @@ class SentimentDataset(Dataset):
             with open(cache_path + "-" + label, 'wb') as f:
                 pickle.dump(len(self.documents['user_id']), f)
                 n_docs = len(self.documents['user_id'])
-                n_chunks = (n_docs//self.chunk_size)+1 
+                n_chunks = (n_docs//self.chunk_size)+1
                 for i in range(n_chunks):
                     if not i == n_chunks-1:
                         pickle.dump(self.documents[label][i*self.chunk_size:(i+1)*self.chunk_size], f)

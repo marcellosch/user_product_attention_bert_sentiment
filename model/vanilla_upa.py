@@ -36,7 +36,6 @@ class VanillaUPA(torch.nn.Module):
         user_embs = self.Uemb(user_ids)
         product_embs = self.Pemb(product_ids)
         word_embs = self.Wemb(sentence_matrix)
-        pdb.set_trace()
         lstm1_out, _ = self.lstm1(word_embs)
         repeated_user_embs = user_embs.repeat_interleave(
             max_sentence_count, dim=0)
