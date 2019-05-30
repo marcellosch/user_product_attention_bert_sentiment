@@ -20,10 +20,14 @@ Doc = namedtuple('Doc', ['user_id', 'product_id', 'label', 'text',
 CACHE_PATH = '../cache/'
 DATASET_URL = 'http://www.thunlp.org/~chm/data/data.zip'
 
-
-def cat_collate(batch):
+@classmethod
+def cat_collate(cls, l):
     """ Concats the batches instead of stacking them like in the default_collate. """
-    return torch.cat(batch)
+    
+    ret = torch.stack(l)
+    pdb.set_trace()
+    return ret
+    
 
 
 class SentimentDataset(Dataset):
@@ -36,12 +40,14 @@ class SentimentDataset(Dataset):
     test_set = SentimentDataset(test_file, userlist_filename, productlist_filename, wordlist_filename)
     """
 
-    def __init__(self, document_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=False):
+    def __init__(self, document_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=False, chunk_size=5000):
         self.documents = dict()
         self.fields = ["user_id", "product_id", "label", "text",
                         "sentence_idx", "mask", "sentence_matrix", "max_sentence_count"]
         for label in self.fields[:-1]:
             self.documents[label] = []
+
+        self.chunk_size = chunk_size
 
         if not os.path.exists('./data/yelp14'):
             wget.download(DATASET_URL)
@@ -207,7 +213,7 @@ class SentimentDataset(Dataset):
 
         # limit the amount of documents for testing purposes if necessary
         lines = list(map(lambda x: x.split('\t\t'),
-                         open(filename).readlines()))[:100]
+                         open(filename).readlines()))
         # lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))
         self.count_long_text = 0
         max_sentence_count = 0
@@ -240,14 +246,27 @@ class SentimentDataset(Dataset):
         self.documents["max_sentence_count"] = torch.tensor(max_sentence_count, dtype=torch.int64)
 
         for label in self.fields[:-1]:
-            self.documents[label] = torch.stack(self.documents[label])
-            torch.save(self.documents[label], cache_path + "-" + label)
+            with open(cache_path + "-" + label, 'wb') as f:
+                pickle.dump(len(self.documents['user_id']), f)
+                n_docs = len(self.documents['user_id'])
+                n_chunks = (n_docs//self.chunk_size)+1 
+                for i in range(n_chunks):
+                    if not i == n_chunks-1:
+                        pickle.dump(self.documents[label][i*self.chunk_size:(i+1)*self.chunk_size], f)
+                    else:
+                        pickle.dump(self.documents[label][i*self.chunk_size:], f)
         torch.save(self.documents["max_sentence_count"], cache_path + "-max_sentence_count")
 
     def read_docs_from_cache(self, load_path):
         """ Loads the cached preprocessed documents from disk. """
-        for label in self.fields:
-            self.documents[label] = torch.load(load_path + "-" + label)
+        for label in self.fields[:-1]:
+            with open(load_path + "-" + label, 'rb') as f:
+                n_docs = pickle.load(f)
+                self.documents[label] = []
+                for i in range((n_docs//self.chunk_size)+1):
+                    self.documents[label] += pickle.load(f)
+        self.documents["max_sentence_count"] = torch.load(load_path + "-max_sentence_count")
+
 
     def __getitem__(self, idx):
         doc = [self.documents[label][idx] for label in self.fields[:-1]
