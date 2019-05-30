@@ -20,7 +20,7 @@ Doc = namedtuple('Doc', ['user_id', 'product_id', 'label', 'text',
 CACHE_PATH = '/datadrive/cache/'
 DATASET_URL = 'http://www.thunlp.org/~chm/data/data.zip'
 
-@classmethod
+
 def cat_collate(cls, l):
     """ Concats the batches instead of stacking them like in the default_collate. """
 
@@ -234,23 +234,22 @@ class SentimentDataset(Dataset):
                 print("Processed {0} of {1} documents. ({2:.1f}%)".format(
                     i, len(lines), i*100/len(lines)))
         
-        flat_sentence_idx = []
+        max_sentence_length = 0
         for doc_sent_idx in self.documents["sentence_idx"]:
-            for idx in doc_sent_idx:
-                flat_sentence_idx.append(idx)
+            for begin, end in doc_sent_idx:
+                max_sentence_length = max(max_sentence_length, end-begin)
 
-        all_sentence_length = [end - begin for begin, end in flat_sentence_idx]
-        self.max_sentence_length = int(max(all_sentence_length))
+        self.max_sentence_length = int(max_sentence_length)
 
-        tmp = []
+        max_sentences_per_doc = 0
         for i, s in enumerate(self.documents["sentence_idx"]):
-            tmp.append([])
+            sent_len = 0
             for idx in s:
                 if idx[0] != -1:
-                    tmp[i].append(idx)
-        
-        all_sentence_count = [len(s) for s in tmp]
-        self.max_sentences_per_doc = int(max(all_sentence_count))
+                    sent_len += 1
+            max_sentences_per_doc = max(max_sentences_per_doc, sent_len)
+    
+        self.max_sentences_per_doc = int(max_sentences_per_doc)
 
         print("Max number of sentences per document: {0}".format(self.max_sentences_per_doc))
         print("Max number of words per sentence: {0}".format(self.max_sentence_length))
