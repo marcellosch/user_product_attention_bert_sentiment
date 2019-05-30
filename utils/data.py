@@ -252,6 +252,9 @@ class SentimentDataset(Dataset):
         all_sentence_count = [len(s) for s in tmp]
         self.max_sentences_per_doc = int(max(all_sentence_count))
 
+        print("Max number of sentences per document: {0}".format(self.max_sentences_per_doc))
+        print("Max number of words per sentence: {0}".format(self.max_sentence_length))
+
         for i in range(len(self.documents["user_id"])):
             self.documents["sentence_matrix"].append(self.create_sentence_matrix(
                 self.documents["text"][i],
