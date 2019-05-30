@@ -2,5 +2,5 @@ data
 simple
 __pycache__/
 tags
-
 cache/
+*.swp
