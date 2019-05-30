@@ -1,5 +1,6 @@
 """ Download the data from: http://www.thunlp.org/~chm/data/data.zip """
 
+import pdb
 import torch
 from torch.utils.data import Dataset
 from collections import namedtuple
@@ -9,7 +10,6 @@ import os
 import numpy as np
 import zipfile
 import wget
-import pdb
 import numpy as np
 
 
@@ -37,16 +37,11 @@ class SentimentDataset(Dataset):
     """
 
     def __init__(self, document_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=False):
-        self.user_id = []
-        self.product_id = []
-        self.label = []
-        self.text = []
-        self.sentence_idx = []
-        self.mask = []
-        self.sentence_matrix = []
-        self.max_sentence_count = 0
-        self.fields = [("user_id", self.user_id), ("product_id", self.product_id), ("label", self.label), ("text", self.text), ("sentence_idx",
-                                                                                                                                self.sentence_idx), ("mask", self.mask), ("sentence_matrix", self.sentence_matrix), ("max_sentence_count", self.max_sentence_count)]
+        self.documents = dict()
+        self.fields = ["user_id", "product_id", "label", "text",
+                        "sentence_idx", "mask", "sentence_matrix", "max_sentence_count"]
+        for label in self.fields[:-1]:
+            self.documents[label] = []
 
         if not os.path.exists('./data/yelp14'):
             wget.download(DATASET_URL)
@@ -62,7 +57,7 @@ class SentimentDataset(Dataset):
 
         document_cache_path = CACHE_PATH + document_file.split('/')[2]
         is_cached = sum([os.path.isfile(document_cache_path + "-" + label)
-                         for label, _ in self.fields]) == len(self.fields)
+                         for label in self.fields]) == len(self.fields)
         self.users, self.user_string2int = self.read_userlist(
             userlist_filename)
         self.products, self.product_string2int = self.read_productlist(
@@ -72,10 +67,10 @@ class SentimentDataset(Dataset):
         if not is_cached or force_no_cache:
             self.read_documents(document_file, document_cache_path)
             print("Preprocessed {0} documents and cached to disk.".format(
-                len(self.user_id)))
+                len(self.documents["user_id"])))
         else:
             self.read_docs_from_cache(document_cache_path)
-            print("Loaded {0} documents from disk.".format(len(self.user_id)))
+            print("Loaded {0} documents from disk.".format(len(self.documents["user_id"])))
 
     def preprocess(self, text, sentence_delimeter='.'):
         """
@@ -224,16 +219,16 @@ class SentimentDataset(Dataset):
             text, sentence_idx, mask, sentence_matrix = self.preprocess(
                 text, sentence_delimeter='<sssss>')
 
-            self.user_id.append(torch.tensor(
+            self.documents["user_id"].append(torch.tensor(
                 self.user_string2int[user_id], dtype=torch.int64))
-            self.product_id.append(torch.tensor(
+            self.documents["product_id"].append(torch.tensor(
                 self.product_string2int[product_id], dtype=torch.int64))
-            self.label.append(torch.tensor(label, dtype=torch.int64))
-            self.text.append(torch.tensor(text, dtype=torch.int64))
-            self.sentence_idx.append(torch.tensor(
+            self.documents["label"].append(torch.tensor(label, dtype=torch.int64))
+            self.documents["text"].append(torch.tensor(text, dtype=torch.int64))
+            self.documents["sentence_idx"].append(torch.tensor(
                 sentence_idx, dtype=torch.int64))
-            self.mask.append(torch.tensor(mask, dtype=torch.int64))
-            self.sentence_matrix.append(sentence_matrix)
+            self.documents["mask"].append(torch.tensor(mask, dtype=torch.int64))
+            self.documents["sentence_matrix"].append(sentence_matrix)
 
             if len(sentence_idx) > max_sentence_count:
                 max_sentence_count = len(sentence_idx)
@@ -242,27 +237,25 @@ class SentimentDataset(Dataset):
                 print("Processed {0} of {1} documents. ({2:.1f}%)".format(
                     i, len(lines), i*100/len(lines)))
 
-        self.max_sentence_count = len(
-            self.label) * [torch.tensor(max_sentence_count, dtype=torch.int64)]
+        self.documents["max_sentence_count"] = torch.tensor(max_sentence_count, dtype=torch.int64)
 
-        for label, field in self.fields[:-1]:
-            print(label)
-            field = torch.stack(field)
-            torch.save(field, cache_path + "-" + label)
-        torch.save(self.max_sentence_count, cache_path + "-" + label)
+        for label in self.fields[:-1]:
+            self.documents[label] = torch.stack(self.documents[label])
+            torch.save(self.documents[label], cache_path + "-" + label)
+        torch.save(self.documents["max_sentence_count"], cache_path + "-max_sentence_count")
 
     def read_docs_from_cache(self, load_path):
         """ Loads the cached preprocessed documents from disk. """
-        for label, field in self.fields:
-            field = torch.load(load_path + "-" + label)
+        for label in self.fields:
+            self.documents[label] = torch.load(load_path + "-" + label)
 
     def __getitem__(self, idx):
-        doc = tuple([field[idx] for _, field in self.fields[:-1]
-                     ] + [self.max_sentence_count])
+        doc = [self.documents[label][idx] for label in self.fields[:-1]
+                     ] + [self.documents["max_sentence_count"]]
         return doc
 
     def __len__(self):
-        return len(self.user_id)
+        return len(self.documents["user_id"])
 
 
 userlist_filename = './data/yelp14/usrlist.txt'
