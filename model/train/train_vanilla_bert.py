@@ -23,4 +23,4 @@ if __name__ == "__main__":
     n_classes = 5
 
     model = VanillaBert(n_classes)
-    train(model, train_dat, dev_dat)
+    train(model, train_dat, dev_dat, args)

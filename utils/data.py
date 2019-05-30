@@ -207,7 +207,7 @@ class SentimentDataset(Dataset):
 
         # limit the amount of documents for testing purposes if necessary
         lines = list(map(lambda x: x.split('\t\t'),
-                         open(filename).readlines()))[:1000]
+                         open(filename).readlines()))[:100]
         # lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))
         self.count_long_text = 0
         max_sentence_count = 0
