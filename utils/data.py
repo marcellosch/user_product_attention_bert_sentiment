@@ -21,15 +21,6 @@ CACHE_PATH = '/datadrive/cache/'
 DATASET_URL = 'http://www.thunlp.org/~chm/data/data.zip'
 
 
-def cat_collate(cls, l):
-    """ Concats the batches instead of stacking them like in the default_collate. """
-
-    ret = torch.stack(l)
-    pdb.set_trace()
-    return ret
-
-
-
 class SentimentDataset(Dataset):
     """
     Represents the sentiment dataset containing IMDB, Yelp13 and Yelp14.
@@ -235,20 +226,17 @@ class SentimentDataset(Dataset):
                     i, len(lines), i*100/len(lines)))
         
         max_sentence_length = 0
-        for doc_sent_idx in self.documents["sentence_idx"]:
-            for begin, end in doc_sent_idx:
-                max_sentence_length = max(max_sentence_length, end-begin)
-
-        self.max_sentence_length = int(max_sentence_length)
-
         max_sentences_per_doc = 0
-        for i, s in enumerate(self.documents["sentence_idx"]):
-            sent_len = 0
-            for idx in s:
-                if idx[0] != -1:
-                    sent_len += 1
-            max_sentences_per_doc = max(max_sentences_per_doc, sent_len)
-    
+        for doc_sent_idx in self.documents["sentence_idx"]:
+            sent_count = 0
+            for begin, end in doc_sent_idx:
+                if begin == -1:
+                    break
+                sent_count += 1
+                max_sentence_length = max(max_sentence_length, end-begin)
+            max_sentences_per_doc = max(max_sentences_per_doc, sent_count)
+        
+        self.max_sentence_length = int(max_sentence_length)
         self.max_sentences_per_doc = int(max_sentences_per_doc)
 
         print("Max number of sentences per document: {0}".format(self.max_sentences_per_doc))
