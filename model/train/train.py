@@ -129,6 +129,7 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
         os.makedirs(out_folder)
     out_args_path = out_folder / "args.json"
     out_results_path = out_folder / "results.json"
+    save_args_to_file(out_args_path, args)
 
     log_format = '%(asctime)-10s: %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_format)
@@ -269,8 +270,6 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
         dev_results.append((dev_acc, dev_loss))
 
         save_results_to_file(out_results_path, train_results, dev_results, test_results)
-        save_args_to_file(out_args_path, args)
-
 
     # Save a trained model
     logging.info("** ** * Saving fine-tuned model ** ** * ")
@@ -280,7 +279,6 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
     torch.save(model_to_save.state_dict(), str(output_model_file))
 
     save_results_to_file(out_results_path, train_results, dev_results, test_results)
-    save_args_to_file(out_args_path, args)
 
 def save_results_to_file(path, train_results, dev_results, test_results):
     results = {
