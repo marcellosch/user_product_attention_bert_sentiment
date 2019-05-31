@@ -268,7 +268,7 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
         logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, dev_acc, dev_loss))
         dev_results.append((dev_acc, dev_loss))
 
-        save_results_to_file(out_results_path, train, dev_results, test_results)
+        save_results_to_file(out_results_path, train_results, dev_results, test_results)
         save_args_to_file(out_args_path, args)
 
 
@@ -279,7 +279,7 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
     output_model_file = out_folder / "pytorch_model.bin"
     torch.save(model_to_save.state_dict(), str(output_model_file))
 
-    save_results_to_file(out_results_path, train, dev_results, test_results)
+    save_results_to_file(out_results_path, train_results, dev_results, test_results)
     save_args_to_file(out_args_path, args)
 
 def save_results_to_file(path, train_results, dev_results, test_results):
