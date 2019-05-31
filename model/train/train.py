@@ -274,8 +274,9 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
     torch.save(model_to_save.state_dict(), str(output_model_file))
 
     # Save model params 
+    args_dict = vars(args)
     with open(out_folder / "args.json", 'w') as f:
-        json.dump(vars(args), f)
+        json.dump({k: str(v) for k,v in args.items()}, f)
     
     # Save training results 
     results = {
