@@ -124,6 +124,12 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
     dev_results = []
     test_results = []
 
+    out_folder = args.output_dir / model.__class__.__name__   
+    if not os.path.isdir(out_folder):
+        os.makedirs(out_folder)
+    out_args_path = out_folder / "args.json"
+    out_results_path = out_folder / "results.json"
+
     log_format = '%(asctime)-10s: %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_format)
 
@@ -262,28 +268,30 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
         logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, dev_acc, dev_loss))
         dev_results.append((dev_acc, dev_loss))
 
-    # Save a trained model
-    out_folder = args.output_dir / model.__class__.__name__   
-    if not os.path.isdir(out_folder):
-        os.makedirs(out_folder)
+        save_results_to_file(out_results_path, train, dev_results, test_results)
+        save_args_to_file(out_args_path, args)
 
+
+    # Save a trained model
     logging.info("** ** * Saving fine-tuned model ** ** * ")
     model_to_save = model.module if hasattr(
         model, 'module') else model  # Only save the model it-self
     output_model_file = out_folder / "pytorch_model.bin"
     torch.save(model_to_save.state_dict(), str(output_model_file))
 
-    # Save model params 
-    args_dict = vars(args)
-    with open(out_folder / "args.json", 'w') as f:
-        json.dump({k: str(v) for k,v in args_dict.items()}, f)
-    
-    # Save training results 
+    save_results_to_file(out_results_path, train, dev_results, test_results)
+    save_args_to_file(out_args_path, args)
+
+def save_results_to_file(path, train_results, dev_results, test_results):
     results = {
         'train_data': train_results,
         'dev_data': dev_results,
         'test_data': test_results
     }
-
-    with open(out_folder / "results.json", 'w') as f:
+    with open(path, 'w') as f:
         json.dump(results, f)
+
+def save_args_to_file(path, args):
+    args_dict = vars(args)
+    with open(path, 'w') as f:
+        json.dump({k: str(v) for k,v in args_dict.items()}, f)
