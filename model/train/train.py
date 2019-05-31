@@ -275,7 +275,7 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
 
     # Save model params 
     with open(out_folder / "args.json", 'wb') as f:
-        json.dump(args, f)
+        json.dump(vars(args), f)
     
     # Save training results 
     results = {
