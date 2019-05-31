@@ -260,7 +260,7 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
                 if (step+1) % 1000 == 0:
                     dev_acc, dev_loss = eval_on_data(model, dev_dat, args.eval_batch_size, device, use_cat_collate=use_cat_collate, step=step)
                     train_acc, train_loss = eval_on_data(model, train_dat , args.eval_batch_size, device, use_cat_collate=use_cat_collate, step=step)
-                    logging.info("Step: {} Training loss: {}, acc: {}, Dev loss: {}, acc: {}\n".format(step, train_loss, train_acc, dev_loss, dev_acc))
+                    logging.info("Step: {} Training loss: {}, acc: {}, Dev loss: {}, acc: {}\n\n".format(step, train_loss, train_acc, dev_loss, dev_acc))
                     model.train()
 
         logging.info("***** Running evaluation on train set *****")
