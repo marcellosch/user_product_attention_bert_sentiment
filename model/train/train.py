@@ -1,7 +1,6 @@
 import torch
 from pathlib import Path
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler
-from torch.nn import CrossEntropyLoss
 from tqdm import tqdm
 from pytorch_pretrained_bert.optimization import BertAdam, WarmupLinearSchedule
 from utils.data import SentimentDataset, userlist_filename, productlist_filename, wordlist_filename, train_file, test_file
@@ -22,11 +21,11 @@ def cat_collate(batch):
         begin_row = i*max_sentences_in_docs
         end_row = begin_row + height
         end_col = width
-        sentence_matrix[begin_row:end_row, 0:end_col] = doc[0]
+        sentence_matrix[begin_row:end_row, 0:end_col] = doc[3]
 
-    user_id = torch.stack([b[0] for b in batch])
-    product_id = torch.stack([b[1] for b in batch])
-    label = torch.stack([b[2] for b in batch])
+    user_id = torch.tensor([b[0] for b in batch], dtype=torch.int64)
+    product_id = torch.tensor([b[1] for b in batch], dtype=torch.int64)
+    label = torch.tensor([b[2] for b in batch], dtype=torch.int64)
     return (user_id, product_id, label, sentence_matrix)
 
 def eval_on_data(model, data, args, device, use_cat_collate=False):
@@ -61,7 +60,7 @@ def eval_on_data(model, data, args, device, use_cat_collate=False):
             logits = model(batch)
 
         # create eval loss
-        loss_function = CrossEntropyLoss()
+        loss_function = torch.nn.NLLLoss()
         tmp_eval_loss = loss_function(logits, label.view(-1))
 
         eval_loss += tmp_eval_loss.mean().item()
@@ -245,7 +244,7 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
         logging.info("***** Running evaluation on dev set *****")
         logging.info("  Num examples = %d", len(dev_dat))
         logging.info("  Batch size = %d", args.eval_batch_size)
-        dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device)
+        dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, use_cat_collate=True)
         logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(
             epoch, dev_acc, dev_loss))
 

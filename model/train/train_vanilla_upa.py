@@ -1,5 +1,6 @@
 #! /usr/bin/python3
-from model.train.train import parse_args, SentenceMatrixDataset, train
+from model.train.train import parse_args, train
+from utils.data import SentenceMatrixDataset
 from model.vanilla_upa import VanillaUPA
 
 
