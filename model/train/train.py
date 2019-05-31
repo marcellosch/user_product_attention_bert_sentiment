@@ -263,7 +263,7 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
         dev_results.append((dev_acc, dev_loss))
 
     # Save a trained model
-    out_folder = args.output_dir / self.__class__.__name__   
+    out_folder = args.output_dir / model.__class__.__name__   
     if not os.path.isdir(out_folder):
         os.makedirs(out_folder)
 
