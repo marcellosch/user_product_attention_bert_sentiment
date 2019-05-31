@@ -10,6 +10,8 @@ import random
 import numpy as np
 import pdb
 from torch.utils.data._utils.collate import default_collate
+import json
+
 
 def cat_collate(batch):
     """ Concats the batches instead of stacking them like in the default_collate. """
@@ -93,8 +95,8 @@ def parse_args():
     parser.add_argument("--no_cuda", action='store_true',
                         help="Whether or not to use CUDA")
     parser.add_argument("--gradient_accumulation_steps", type=int, default=1)
-    parser.add_argument("--train_batch_size", default=16, type=int)
-    parser.add_argument("--eval_batch_size", default=16, type=int)
+    parser.add_argument("--train_batch_size", default=32, type=int)
+    parser.add_argument("--eval_batch_size", default=32, type=int)
     parser.add_argument("--fp16", action='store_true')
     parser.add_argument("--loss_scale", type=float, default=0)
     parser.add_argument("--warmup_proportion", default=0.1, type=float)
@@ -115,6 +117,11 @@ def parse_args():
 
 
 def train(model, train_dat, dev_dat, args, use_cat_collate=False):
+
+    train_results = []
+    dev_results = []
+    test_results = []
+
     log_format = '%(asctime)-10s: %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_format)
 
@@ -244,13 +251,36 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
         logging.info("***** Running evaluation on dev set *****")
         logging.info("  Num examples = %d", len(dev_dat))
         logging.info("  Batch size = %d", args.eval_batch_size)
-        dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, use_cat_collate=True)
-        logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(
-            epoch, dev_acc, dev_loss))
+        
+        train_acc, train_loss = eval_on_data(model, train_dat, args, device, use_cat_collate=use_cat_collate)
+        logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, train_acc, train_loss))
+        train_results.append((train_acc, train_loss))
+
+        dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, use_cat_collate=use_cat_collate)
+        logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, dev_acc, dev_loss))
+        dev_result.append((dev_acc, dev_loss))
 
     # Save a trained model
+    out_folder = args.output_dir / self.__class__.__name__   
+    if not os.path.isdir(out_folder):
+        os.makedirs(out_folder)
+
     logging.info("** ** * Saving fine-tuned model ** ** * ")
     model_to_save = model.module if hasattr(
         model, 'module') else model  # Only save the model it-self
-    output_model_file = args.output_dir / "pytorch_model.bin"
+    output_model_file = out_folder / "pytorch_model.bin"
     torch.save(model_to_save.state_dict(), str(output_model_file))
+
+    # Save model params 
+    with open(out_folder / "args.json", 'wb') as f:
+        json.dump(args, f)
+    
+    # Save training results 
+    results = {
+        'train_data': train_results,
+        'dev_data': dev_results,
+        'test_data': test_results
+    }
+
+    with open(out_folder / "results.json", 'wb') as f:
+        json.dump(results, f)
