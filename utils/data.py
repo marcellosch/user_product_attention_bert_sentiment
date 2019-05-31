@@ -94,9 +94,14 @@ class SentimentDataset(Dataset):
         sentences = []
         for end, token in enumerate(tokenized):
             if token == '[SEP]':
-                sentences += tokenized[begin:end]
+                sentences.append(tokenized[begin:end])
                 max_sentence_length = max(max_sentence_length, end-begin)
                 begin = end+1
+        if len(tokenized)-begin > 0:
+            sentences.append(tokenized[begin:])
+        
+        if len(sentences) == 0:
+            pdb.set_trace()
 
         sentences = [self.tokenizer.convert_tokens_to_ids(sentence) for sentence in sentences]
         return sentences, max_sentence_length
@@ -157,7 +162,7 @@ class SentimentDataset(Dataset):
 
         self.count_long_text = 0
         max_sentence_count = 0
-        for i, line in enumerate(lines[:100]):
+        for i, line in enumerate(lines):
             user_id, product_id, label, text = line
 
             label = int(label)-1  # classes are from 0-4 but starts from 1-5
@@ -253,6 +258,8 @@ class SentenceMatrixDataset(SentimentDataset):
         ret = []
         for sentence in self.documents["input_tokens"][idx]:
             ret.append(torch.tensor(sentence))
+        if len(ret) == 0:
+            pdb.set_trace()
 
         return pad_sequence(ret, batch_first=True)
 

@@ -65,15 +65,17 @@ def eval_on_data(model, data, args, device, use_cat_collate=False):
 
         eval_loss += tmp_eval_loss.mean().item()
         nb_eval_steps += 1
-        if len(preds) == 0:
-            preds.append(logits.detach().cpu().numpy())
-        else:
-            preds[0] = np.append(
-                preds[0], logits.detach().cpu().numpy(), axis=0)
+        
+        # if len(preds) == 0:
+        #     preds.append(logits.detach().cpu().numpy())
+        # else:
+        #     preds[0] = np.append(
+        #         preds[0], logits.detach().cpu().numpy(), axis=0)
+        preds += logits.cpu().argmax(dim=1).tolist()
         labels += label.tolist()
 
-    preds = preds[0]
-    preds = np.argmax(preds, axis=1)
+    #preds = preds[0]
+    preds = np.array(preds)
     labels = np.array(labels)
 
     assert len(preds) == len(labels)
