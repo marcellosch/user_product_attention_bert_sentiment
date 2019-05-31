@@ -247,7 +247,7 @@ class SentenceMatrixDataset(SentimentDataset):
         label = self.documents["label"][idx]
         sentence_matrix = self.make_sentence_matrix(idx)
 
-        return sentence_matrix, user_id, product_id, label
+        return  user_id, product_id, label, sentence_matrix
     
     def make_sentence_matrix(self, idx):
         ret = []

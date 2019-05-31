@@ -14,10 +14,20 @@ from torch.utils.data._utils.collate import default_collate
 
 def cat_collate(batch):
     """ Concats the batches instead of stacking them like in the default_collate. """
+    max_words_in_sentence = max([b[3].shape[1] for b in batch])
+    max_sentences_in_docs = max([b[3].shape[0] for b in batch])
+    sentence_matrix = torch.zeros(len(batch) * max_sentences_in_docs, max_words_in_sentence, dtype=torch.int64)
+    for i, doc in enumerate(batch):
+        height, width = doc[3].shape
+        begin_row = i*max_sentences_in_docs
+        end_row = begin_row + height
+        end_col = width
+        sentence_matrix[begin_row:end_row, 0:end_col] = doc[0]
 
-    ret = torch.stack(l)
-    pdb.set_trace()
-    return ret
+    user_id = torch.stack([b[0] for b in batch])
+    product_id = torch.stack([b[1] for b in batch])
+    label = torch.stack([b[2] for b in batch])
+    return (user_id, product_id, label, sentence_matrix)
 
 def eval_on_data(model, data, args, device, use_cat_collate=False):
     # Run prediction for full data

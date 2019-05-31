@@ -1,5 +1,5 @@
 #! /usr/bin/python3
-from model.train.train import parse_args, SentimentDataset, train
+from model.train.train import parse_args, SentenceMatrixDataset, train
 from model.vanilla_upa import VanillaUPA
 
 
@@ -14,9 +14,9 @@ if __name__ == "__main__":
     test_file = './data/yelp14/test.txt'
 
     # Read training and test datasets
-    train_dat = SentimentDataset(train_file, userlist_filename, productlist_filename,
+    train_dat = SentenceMatrixDataset(train_file, userlist_filename, productlist_filename,
                                  wordlist_filename, force_no_cache=args.force_document_processing)
-    dev_dat = SentimentDataset(test_file, userlist_filename, productlist_filename,
+    dev_dat = SentenceMatrixDataset(test_file, userlist_filename, productlist_filename,
                                wordlist_filename, force_no_cache=args.force_document_processing)
 
     # Determine model parameter
@@ -26,4 +26,4 @@ if __name__ == "__main__":
 
     model = VanillaUPA(n_user, n_product, n_classes, args.user_size,
                        args.product_size, args.attention_hidden_size)
-    train(model, train_dat, dev_dat, args)
+    train(model, train_dat, dev_dat, args, use_cat_collate=True)
