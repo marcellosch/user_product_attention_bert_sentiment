@@ -256,7 +256,8 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
                     optimizer.step()
                     optimizer.zero_grad()
                     global_step += 1
-                if step % 20000 == 0:
+
+                if (step+1) % 1000 == 0:
                     dev_acc, dev_loss = eval_on_data(model, dev_dat, args.eval_batch_size, device, use_cat_collate=use_cat_collate, step=step)
                     train_acc, train_loss = eval_on_data(model, train_dat , args.eval_batch_size, device, use_cat_collate=use_cat_collate, step=step)
                     logging.info("Step: {} Training loss: {}, acc: {}, Dev loss: {}, acc: {}\n".format(step, train_loss, train_acc, dev_loss, dev_acc))

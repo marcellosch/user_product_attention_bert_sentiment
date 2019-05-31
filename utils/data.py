@@ -256,7 +256,12 @@ class SentenceMatrixDataset(SentimentDataset):
     
     def make_sentence_matrix(self, idx):
         ret = []
-        for sentence in self.documents["input_tokens"][idx]:
+        doc = self.documents["input_tokens"][idx]
+        if len(doc)>512:
+            doc = doc[:512]
+        for sentence in doc:
+            if len(sentence)>512:
+                sentence = sentence[:512]
             ret.append(torch.tensor(sentence))
         if len(ret) == 0:
             pdb.set_trace()
