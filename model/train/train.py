@@ -257,13 +257,17 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
                 # dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, n_classes)
                 model.train()
 
-        logging.info("***** Running evaluation on dev set *****")
-        logging.info("  Num examples = %d", len(dev_dat))
-        logging.info("  Batch size = %d", args.eval_batch_size)
+        logging.info("***** Running evaluation on train set *****")
+        logging.info("  Num examples = %d", len(train_dat))
+        logging.info("  Batch size = %d", args.train_batch_size)
         
         train_acc, train_loss = eval_on_data(model, train_dat, args.train_batch_size, device, use_cat_collate=use_cat_collate)
         logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, train_acc, train_loss))
         train_results.append((train_acc, train_loss))
+
+        logging.info("***** Running evaluation on dev set *****")
+        logging.info("  Num examples = %d", len(dev_dat))
+        logging.info("  Batch size = %d", args.eval_batch_size)
 
         dev_acc, dev_loss = eval_on_data(model, dev_dat, args.train_batch_size, device, use_cat_collate=use_cat_collate)
         logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, dev_acc, dev_loss))
