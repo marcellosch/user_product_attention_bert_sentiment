@@ -260,7 +260,7 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
 
         dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, use_cat_collate=use_cat_collate)
         logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, dev_acc, dev_loss))
-        dev_result.append((dev_acc, dev_loss))
+        dev_results.append((dev_acc, dev_loss))
 
     # Save a trained model
     out_folder = args.output_dir / self.__class__.__name__   
