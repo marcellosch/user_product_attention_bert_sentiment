@@ -1,6 +1,6 @@
 import torch
 from pathlib import Path
-from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler
+from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler, Subset
 from tqdm import tqdm
 from pytorch_pretrained_bert.optimization import BertAdam, WarmupLinearSchedule
 from utils.data import SentimentDataset, userlist_filename, productlist_filename, wordlist_filename, train_file, test_file
@@ -30,17 +30,19 @@ def cat_collate(batch):
     label = torch.tensor([b[2] for b in batch], dtype=torch.int64)
     return (user_id, product_id, label, sentence_matrix)
 
-def eval_on_data(model, data, batch_size, device, use_cat_collate=False):
+def eval_on_data(model, data, batch_size, device, use_cat_collate=False, step=None):
     # Run prediction for full data
-    sampler = SequentialSampler(data)
 
     if use_cat_collate:
         collate_fn = cat_collate
     else:
         collate_fn = default_collate
     
+    if not step is None:
+        inds = np.random.choice(range(len(data)), 2000)
+        data = Subset(data, inds)
+
     eval_dataloader = DataLoader(data,
-                                 sampler=sampler,
                                  batch_size=batch_size,
                                  collate_fn=collate_fn)
 
@@ -254,14 +256,17 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
                     optimizer.step()
                     optimizer.zero_grad()
                     global_step += 1
-                # dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, n_classes)
-                model.train()
+                if step % 20000 == 0:
+                    dev_acc, dev_loss = eval_on_data(model, dev_dat, args.eval_batch_size, device, use_cat_collate=use_cat_collate, step=step)
+                    train_acc, train_loss = eval_on_data(model, train_dat , args.eval_batch_size, device, use_cat_collate=use_cat_collate, step=step)
+                    logging.info("Step: {} Training loss: {}, acc: {}, Dev loss: {}, acc: {}\n".format(step, train_loss, train_acc, dev_loss, dev_acc))
+                    model.train()
 
         logging.info("***** Running evaluation on train set *****")
         logging.info("  Num examples = %d", len(train_dat))
         logging.info("  Batch size = %d", args.train_batch_size)
         
-        train_acc, train_loss = eval_on_data(model, train_dat, args.train_batch_size, device, use_cat_collate=use_cat_collate)
+        train_acc, train_loss = eval_on_data(model, train_dat, args.train_batch_size, device, use_cat_collate=use_cat_collate, step=step)
         logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, train_acc, train_loss))
         train_results.append((train_acc, train_loss))
 
