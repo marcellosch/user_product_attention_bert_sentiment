@@ -30,7 +30,7 @@ def cat_collate(batch):
     label = torch.tensor([b[2] for b in batch], dtype=torch.int64)
     return (user_id, product_id, label, sentence_matrix)
 
-def eval_on_data(model, data, args, device, use_cat_collate=False):
+def eval_on_data(model, data, batch_size, device, use_cat_collate=False):
     # Run prediction for full data
     sampler = SequentialSampler(data)
 
@@ -41,7 +41,7 @@ def eval_on_data(model, data, args, device, use_cat_collate=False):
     
     eval_dataloader = DataLoader(data,
                                  sampler=sampler,
-                                 batch_size=args.eval_batch_size,
+                                 batch_size=batch_size,
                                  collate_fn=collate_fn)
 
     model.eval()
@@ -261,11 +261,11 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
         logging.info("  Num examples = %d", len(dev_dat))
         logging.info("  Batch size = %d", args.eval_batch_size)
         
-        train_acc, train_loss = eval_on_data(model, train_dat, args, device, use_cat_collate=use_cat_collate)
+        train_acc, train_loss = eval_on_data(model, train_dat, args.train_batch_size, device, use_cat_collate=use_cat_collate)
         logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, train_acc, train_loss))
         train_results.append((train_acc, train_loss))
 
-        dev_acc, dev_loss = eval_on_data(model, dev_dat, args, device, use_cat_collate=use_cat_collate)
+        dev_acc, dev_loss = eval_on_data(model, dev_dat, args.train_batch_size, device, use_cat_collate=use_cat_collate)
         logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, dev_acc, dev_loss))
         dev_results.append((dev_acc, dev_loss))
 
