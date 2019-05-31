@@ -14,7 +14,7 @@ class VanillaBert(torch.nn.Module):
         self.hidden_size = hidden_size
         self.bert = BertModel.from_pretrained("bert-base-uncased")
         self.linear = torch.nn.Linear(self.hidden_size, self.n_classes)
-        self.softmax = torch.nn.Softmax()
+        self.softmax = torch.nn.LogSoftmax(dim=1)
 
     def forward(self, batch):
         _, _, _, input_ids, input_mask = batch

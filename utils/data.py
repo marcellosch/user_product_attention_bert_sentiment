@@ -162,7 +162,7 @@ class SentimentDataset(Dataset):
 
         self.count_long_text = 0
         max_sentence_count = 0
-        for i, line in enumerate(lines):
+        for i, line in enumerate(lines[:1000]):
             user_id, product_id, label, text = line
 
             label = int(label)-1  # classes are from 0-4 but starts from 1-5

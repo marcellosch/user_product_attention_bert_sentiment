@@ -29,7 +29,7 @@ class VanillaUPA(torch.nn.Module):
         self.sentence_attention = UserProductAttention(
             self.user_size, self.product_size, 200, self.hidden_size)
         self.linear = torch.nn.Linear(hidden_size, n_classes)
-        self.softmax = torch.nn.Softmax()
+        self.softmax = torch.nn.LogSoftmax(dim=1)
 
     def forward(self, batch):
         user_ids, product_ids, _, sentence_matrix = batch

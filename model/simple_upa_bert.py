@@ -24,7 +24,7 @@ class SimpleUPABert(torch.nn.Module):
         self.word_attention = UserProductAttention(
             user_size, product_size, attention_hidden_size, hidden_size)
         self.linear = torch.nn.Linear(self.hidden_size, self.n_classes)
-        self.softmax = torch.nn.Softmax()
+        self.softmax = torch.nn.LogSoftmax(dim=1)
 
     def forward(self, batch):
         """ Inputs:
