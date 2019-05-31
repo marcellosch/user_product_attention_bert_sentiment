@@ -17,7 +17,7 @@ class VanillaBert(torch.nn.Module):
         self.softmax = torch.nn.Softmax()
 
     def forward(self, batch):
-        _, _, _, input_ids, _, input_mask, _, _ = batch
+        _, _, _, input_ids, input_mask = batch
         bert_out, _ = self.bert(
             input_ids, attention_mask=input_mask, output_all_encoded_layers=False)
         linear_out = self.linear(bert_out[:, 0, :])

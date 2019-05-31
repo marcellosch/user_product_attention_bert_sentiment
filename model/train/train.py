@@ -10,13 +10,28 @@ import logging
 import random
 import numpy as np
 import pdb
+from torch._utils.data._utils import default_collate
 
+def cat_collate(batch):
+    """ Concats the batches instead of stacking them like in the default_collate. """
 
-def eval_on_data(model, data, args, device):
+    ret = torch.stack(l)
+    pdb.set_trace()
+    return ret
+
+def eval_on_data(model, data, args, device, use_cat_collate=False):
     # Run prediction for full data
     sampler = SequentialSampler(data)
-    eval_dataloader = DataLoader(
-        data, sampler=sampler, batch_size=args.eval_batch_size)
+
+    if use_cat_collate:
+        collate_fn = cat_collate
+    else:
+        collate_fn = default_collate
+    
+    eval_dataloader = DataLoader(data,
+                                 sampler=sampler,
+                                 batch_size=args.eval_batch_size,
+                                 collate_fn=collate_fn)
 
     model.eval()
     eval_loss = 0
@@ -90,7 +105,7 @@ def parse_args():
     return args
 
 
-def train(model, train_dat, dev_dat, args):
+def train(model, train_dat, dev_dat, args, use_cat_collate=False):
     log_format = '%(asctime)-10s: %(message)s'
     logging.basicConfig(level=logging.INFO, format=log_format)
 
@@ -167,10 +182,17 @@ def train(model, train_dat, dev_dat, args):
     model = model.to(device)
     model.train()
 
+    if use_cat_collate:
+        collate_fn = cat_collate
+    else:
+        collate_fn = default_collate
+
     for epoch in range(args.epochs):
         train_sampler = RandomSampler(train_dat)
-        train_dataloader = DataLoader(
-            train_dat, sampler=train_sampler, batch_size=args.train_batch_size)
+        train_dataloader = DataLoader(train_dat,
+                                      sampler=train_sampler, 
+                                      batch_size=args.train_batch_size, 
+                                      collate_fn=collate_fn)
         tr_loss = 0
         nb_tr_steps = 0
         with tqdm(total=len(train_dataloader), desc=f"Epoch {epoch}") as pbar:
