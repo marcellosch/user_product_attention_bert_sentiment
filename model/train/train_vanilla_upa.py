@@ -17,7 +17,7 @@ if __name__ == "__main__":
     # Read training and test datasets
     train_dat = SentenceMatrixDataset(train_file, userlist_filename, productlist_filename,
                                  wordlist_filename, force_no_cache=args.force_document_processing)
-    dev_dat = SentenceMatrixDataset(test_file, userlist_filename, productlist_filename,
+    dev_dat = SentenceMatrixDataset(dev_file, userlist_filename, productlist_filename,
                                wordlist_filename, force_no_cache=args.force_document_processing)
 
     # Determine model parameter
