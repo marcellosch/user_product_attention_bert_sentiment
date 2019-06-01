@@ -52,7 +52,7 @@ class VanillaUPA(torch.nn.Module):
         sentence_attention_out = self.sentence_attention(
             lstm2_out, user_embs, product_embs)
         linear_out = self.linear(sentence_attention_out)
-        softmax_out = self.softmax(linear_out)
+        softmax_out = self.softmax(linear_out.view(-1, self.n_classes))
         return softmax_out
 
     def train(self):
