@@ -114,7 +114,7 @@ def parse_args():
                         default=200, help="Attention hidden state dimension")
     parser.add_argument("--force_document_processing",
                         action="store_true", help="Force document preprocessing")
-
+    parser.add_argument("--dataset", default="yelp14", type=str)
     args = parser.parse_args()
 
     return args

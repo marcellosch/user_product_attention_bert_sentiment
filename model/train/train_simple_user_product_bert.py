@@ -6,12 +6,14 @@ from model.simple_upa_bert import SimpleUPABert
 if __name__ == "__main__":
     args = parse_args()
 
-    userlist_filename = './data/yelp14/usrlist.txt'
-    productlist_filename = './data/yelp14/prdlist.txt'
-    wordlist_filename = './data/yelp14/wordlist.txt'
-    train_file = './data/yelp14/train.txt'
-    dev_file = './data/yelp14/dev.txt'
-    test_file = './data/yelp14/test.txt'
+    folder = './data/' + args.dataset 
+
+    userlist_filename = folder + '/usrlist.txt'
+    productlist_filename = folder + '/prdlist.txt'
+    wordlist_filename = folder + '/wordlist.txt'
+    train_file = folder + '/train.txt'
+    dev_file = folder + '/dev.txt'
+    test_file = folder + '/test.txt'
 
     # Read training and test datasets
     train_dat = SentimentDataset(train_file, userlist_filename, productlist_filename,
