@@ -14,7 +14,8 @@ import numpy as np
 from torch.nn.utils.rnn import pad_sequence
 
 CACHE_PATH = './datadrive/cache/'
-DATASET_URL = 'http://www.thunlp.org/~chm/data/data.zip'
+# DATASET_URL = 'http://www.thunlp.org/~chm/data/data.zip'
+DATASET_URL = 'https://bertupa.blob.core.windows.net/data/data.zip'
 
 
 class SentimentDataset(Dataset):
