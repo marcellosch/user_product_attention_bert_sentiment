@@ -49,7 +49,8 @@ class SentimentDataset(Dataset):
         if not os.path.exists(CACHE_PATH):
             os.makedirs(CACHE_PATH)
 
-        document_cache_path = CACHE_PATH + document_file.split('/')[-1]
+        dataset, filename = document_file.split('/')[-2:]
+        document_cache_path = CACHE_PATH +  dataset + "/" + document_file.split('/')[-1] 
         is_cached = sum([os.path.isfile(document_cache_path + "-" + label)
                          for label in self.fields]) == len(self.fields)
         self.users, self.user_string2int = self.read_userlist(
