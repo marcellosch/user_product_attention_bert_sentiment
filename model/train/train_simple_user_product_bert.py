@@ -22,7 +22,7 @@ if __name__ == "__main__":
 
     n_user = len(train_dat.users)
     n_product = len(train_dat.products)
-    n_classes = 5
+    n_classes = train_dat.get_n_classes()
 
     model = SimpleUPABert(n_user, n_product, n_classes, args.user_size,
                           args.product_size, args.attention_hidden_size)
