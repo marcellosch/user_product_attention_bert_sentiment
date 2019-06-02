@@ -99,7 +99,7 @@ class SentimentDataset(Dataset):
                 begin = end+1
         if len(tokenized)-begin > 0:
             sentences.append(tokenized[begin:])
-        
+
         if len(sentences) == 0:
             pdb.set_trace()
 
@@ -109,7 +109,7 @@ class SentimentDataset(Dataset):
     def read_userlist(self, filename):
         """ Read userlist from file containing one user id per line. """
         lines = list(map(lambda x: x.split(),
-                         open(userlist_filename).readlines()))
+                         open(userlist_filename, 'r+', encoding="utf-8").readlines()))
         user_list = [item[0] for item in lines]
 
         unique_users = list(set(user_list))
@@ -133,7 +133,7 @@ class SentimentDataset(Dataset):
     def read_vocabulary(self, filename):
         """ Read vocabulary from file containing one word per line. """
         lines = list(map(lambda x: x.split(),
-                         open(wordlist_filename).readlines()))
+                         open(wordlist_filename, 'r+', encoding="utf-8").readlines()))
 
         word_list = [item[0] for item in lines]
         vocab = {word: idx for idx, word in enumerate(word_list)}
@@ -157,7 +157,7 @@ class SentimentDataset(Dataset):
 
         # limit the amount of documents for testing purposes if necessary
         lines = list(map(lambda x: x.split('\t\t'),
-                         open(filename).readlines()))
+                         open(filename, 'r+', encoding="utf-8").readlines()))
         # lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))
 
         self.count_long_text = 0
@@ -169,7 +169,7 @@ class SentimentDataset(Dataset):
 
             input_tokens, max_sentence_length = self.preprocess(
                 text, sentence_delimeter='<sssss>')
-            
+
 
 
             self.documents["user_id"].append(self.user_string2int[user_id])
@@ -189,7 +189,7 @@ class SentimentDataset(Dataset):
                     i, len(lines), i*100/len(lines)))
 
         self.documents["max_sentence_count"] = torch.tensor(max_sentence_count, dtype=torch.int64)
-        
+
         for label in self.fields[:-1]:
             with open(cache_path + "-" + label, 'wb') as f:
                 pickle.dump(len(self.documents['user_id']), f)
@@ -253,7 +253,7 @@ class SentenceMatrixDataset(SentimentDataset):
         sentence_matrix = self.make_sentence_matrix(idx)
 
         return  user_id, product_id, label, sentence_matrix
-    
+
     def make_sentence_matrix(self, idx):
         ret = []
         doc = self.documents["input_tokens"][idx]
