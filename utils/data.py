@@ -25,14 +25,6 @@ DATASET_URL = 'https://bertupa.blob.core.windows.net/data/data.zip'
 
 
 class SentimentDataset(Dataset):
-    """
-    Represents the sentiment dataset containing IMDB, Yelp13 and Yelp14.
-    Has to initialized for each set. Example:
-
-    train_set = SentimentDataset(train_file, userlist_filename, productlist_filename, wordlist_filename)
-    dev_set = SentimentDataset(dev_file, userlist_filename, productlist_filename, wordlist_filename)
-    test_set = SentimentDataset(test_file, userlist_filename, productlist_filename, wordlist_filename)
-    """
 
     def __init__(self, document_file, userlist_filename, productlist_filename, wordlist_filename, cls_tag=True, force_no_cache=False, chunk_size=5000):
         self.n_classes = None
@@ -280,22 +272,3 @@ class SentenceMatrixDataset(SentimentDataset):
             ret.append(torch.tensor(sentence))
 
         return pad_sequence(ret, batch_first=True)
-
-
-
-#userlist_filename = './data/yelp14/usrlist.txt'
-#productlist_filename = './data/yelp14/prdlist.txt'
-#wordlist_filename = './data/yelp14/wordlist.txt'
-#train_file = './data/yelp14/train.txt'
-#dev_file = './data/yelp14/dev.txt'
-#test_file = './data/yelp14/test.txt'
-#
-
-if __name__ == '__main__':
-    """ Just to test. """
-    ds = SentimentDataset(train_file, userlist_filename,
-                          productlist_filename, wordlist_filename, force_no_cache=True)
-    print(ds[0])
-    ds2 = SentenceMatrixDataset(train_file, userlist_filename,
-                                productlist_filename, wordlist_filename, force_no_cache=True)
-    print(ds2[0])

@@ -16,13 +16,11 @@ if __name__ == "__main__":
     dev_file = folder + '/dev.txt'
     test_file = folder + '/test.txt'
 
-    # Read training and test datasets
     train_dat = SentenceMatrixDataset(train_file, userlist_filename, productlist_filename,
                                  wordlist_filename, force_no_cache=args.force_document_processing)
     dev_dat = SentenceMatrixDataset(dev_file, userlist_filename, productlist_filename,
                                wordlist_filename, force_no_cache=args.force_document_processing)
 
-    # Determine model parameter
     n_user = len(train_dat.users)
     n_product = len(train_dat.products)
     n_classes = train_dat.get_n_classes()

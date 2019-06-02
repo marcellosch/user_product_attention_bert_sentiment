@@ -15,7 +15,6 @@ if __name__ == "__main__":
     dev_file = folder + '/dev.txt'
     test_file = folder + '/test.txt'
 
-    # Read training and test datasets
     train_dat = SentimentDataset(train_file, userlist_filename, productlist_filename,
                                  wordlist_filename, force_no_cache=args.force_document_processing)
     dev_dat = SentimentDataset(test_file, userlist_filename, productlist_filename,
