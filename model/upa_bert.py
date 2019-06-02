@@ -41,7 +41,6 @@ class UPABert(torch.nn.Module):
         return softmax_out
 
     def train(self):
-        # this is called in the pytorch example, I dont't know why
         self.bert.train()
 
     def eval(self):
