@@ -11,23 +11,10 @@ import numpy as np
 import zipfile
 import wget
 import numpy as np
-
-
-Word = namedtuple('Word', ['idx', 'id'])
-Doc = namedtuple('Doc', ['user_id', 'product_id', 'label', 'text',
-                         'sentence_idx', 'mask', 'sentence_matrix', 'max_sentence_count'])
+from torch.nn.utils.rnn import pad_sequence
 
 CACHE_PATH = '/datadrive/cache/'
 DATASET_URL = 'http://www.thunlp.org/~chm/data/data.zip'
-
-@classmethod
-def cat_collate(cls, l):
-    """ Concats the batches instead of stacking them like in the default_collate. """
-
-    ret = torch.stack(l)
-    pdb.set_trace()
-    return ret
-
 
 
 class SentimentDataset(Dataset):
@@ -40,10 +27,10 @@ class SentimentDataset(Dataset):
     test_set = SentimentDataset(test_file, userlist_filename, productlist_filename, wordlist_filename)
     """
 
-    def __init__(self, document_file, userlist_filename, productlist_filename, wordlist_filename, force_no_cache=False, chunk_size=5000):
+    def __init__(self, document_file, userlist_filename, productlist_filename, wordlist_filename, cls_tag=True, force_no_cache=False, chunk_size=5000):
+        self.cls_tag = cls_tag
         self.documents = dict()
-        self.fields = ["user_id", "product_id", "label", "text",
-                        "sentence_idx", "mask", "sentence_matrix", "max_sentence_count"]
+        self.fields = ["user_id", "product_id", "label", "input_tokens", "max_sentence_length", "max_sentence_count"]
         for label in self.fields[:-1]:
             self.documents[label] = []
 
@@ -99,68 +86,25 @@ class SentimentDataset(Dataset):
         """
         text = text.replace(sentence_delimeter, '[SEP]')
         tokenized = self.tokenizer.tokenize(text)
-        tokenized = (['[CLS]'] + tokenized)  # + 512 * ['[PAD]'])[:512]
+        #tokenized = (['[CLS]'] + tokenized)  # + 512 * ['[PAD]'])[:512]
 
-        sentence_idx = []
-        sentence_lengths = []
-        begin = 1  # first token is not part of a sentence
+        #sentence_idx = []
+        max_sentence_length = 0
+        begin = 0  # first token is not part of a sentence
+        sentences = []
         for end, token in enumerate(tokenized):
             if token == '[SEP]':
-                sentence_lengths.append(end-begin)
+                sentences.append(tokenized[begin:end])
+                max_sentence_length = max(max_sentence_length, end-begin)
                 begin = end+1
+        if len(tokenized)-begin > 0:
+            sentences.append(tokenized[begin:])
+        
+        if len(sentences) == 0:
+            pdb.set_trace()
 
-        cumsum = 1
-        for sent_l in sentence_lengths:
-            sentence_idx.append((cumsum, cumsum+sent_l))
-            cumsum += sent_l
-
-        sentence_idx += ([(-1, -1)] * (512-len(sentence_idx)))
-
-        tokenized = ([token for token in tokenized if token !=
-                      '[SEP]'] + 512 * ['[PAD]'])[:512]
-        token_ids = self.tokenizer.convert_tokens_to_ids(tokenized)
-        mask = [1 if token != 0 else 0 for token in token_ids]
-
-        # TODO remove hardcoded values
-        max_sentence_length = 512
-        max_num_of_sentences = 20
-        sentence_matrix = self.create_sentence_matrix(
-            token_ids, sentence_idx, max_sentence_length, max_num_of_sentences)
-
-        return token_ids, sentence_idx, mask, sentence_matrix
-
-    def create_sentence_matrix(self, token_ids, sentence_idx, max_sentence_length, max_num_of_sentences):
-        """
-        Args:
-            token_ids (list of int): list containing the id of each token.
-            sentence_idx (list of (int, int) ): list containing the beginning and end of each sentence.
-            max_sentence_length (int): max number of tokens per sentence
-            max_sum_of_sentences (int): max number of sentences per document
-
-        Returns:
-            sentence_matrix (tensor of dimensions (max_num_of_sentences, max_sentence_length) ): matrix where each row corresponds to the token ids of a sentence.
-                                                                                                 Sentences and document are padded.
-        """
-
-        document = []
-        for begin, end in sentence_idx:
-            sentence_tokens = token_ids[begin:end]
-            padded_sntence_tokens = (
-                sentence_tokens + max_sentence_length * [0])[:max_sentence_length]
-            document.append(torch.tensor(
-                padded_sntence_tokens, dtype=torch.int64))
-
-            if begin == -1 or end == -1:
-                break
-
-        dummy_sentence = torch.tensor(
-            max_sentence_length * [0], dtype=torch.int64)
-        padded_document = (document + max_num_of_sentences *
-                           [dummy_sentence])[:max_num_of_sentences]
-
-        sentence_matrix = torch.stack(padded_document)
-
-        return sentence_matrix
+        sentences = [self.tokenizer.convert_tokens_to_ids(sentence) for sentence in sentences]
+        return sentences, max_sentence_length
 
     def read_userlist(self, filename):
         """ Read userlist from file containing one user id per line. """
@@ -215,6 +159,7 @@ class SentimentDataset(Dataset):
         lines = list(map(lambda x: x.split('\t\t'),
                          open(filename).readlines()))
         # lines = list(map(lambda x: x.split('\t\t'), open(filename).readlines()))
+
         self.count_long_text = 0
         max_sentence_count = 0
         for i, line in enumerate(lines):
@@ -222,29 +167,29 @@ class SentimentDataset(Dataset):
 
             label = int(label)-1  # classes are from 0-4 but starts from 1-5
 
-            text, sentence_idx, mask, sentence_matrix = self.preprocess(
+            input_tokens, max_sentence_length = self.preprocess(
                 text, sentence_delimeter='<sssss>')
+            
 
-            self.documents["user_id"].append(torch.tensor(
-                self.user_string2int[user_id], dtype=torch.int64))
-            self.documents["product_id"].append(torch.tensor(
-                self.product_string2int[product_id], dtype=torch.int64))
-            self.documents["label"].append(torch.tensor(label, dtype=torch.int64))
-            self.documents["text"].append(torch.tensor(text, dtype=torch.int64))
-            self.documents["sentence_idx"].append(torch.tensor(
-                sentence_idx, dtype=torch.int64))
-            self.documents["mask"].append(torch.tensor(mask, dtype=torch.int64))
-            self.documents["sentence_matrix"].append(sentence_matrix)
 
-            if len(sentence_idx) > max_sentence_count:
-                max_sentence_count = len(sentence_idx)
+            self.documents["user_id"].append(self.user_string2int[user_id])
+            self.documents["product_id"].append(self.product_string2int[product_id])
+            self.documents["label"].append(label)
+            self.documents["input_tokens"].append(input_tokens)
+            self.documents["max_sentence_length"].append(max_sentence_length)
+            # self.documents["sentence_idx"].append(torch.tensor(
+            #     sentence_idx, dtype=torch.int64))
+            # self.documents["mask"].append(torch.tensor(mask, dtype=torch.int64))
+
+            if len(input_tokens) > max_sentence_count:
+                max_sentence_count = len(input_tokens)
 
             if i % 5000 == 0:
                 print("Processed {0} of {1} documents. ({2:.1f}%)".format(
                     i, len(lines), i*100/len(lines)))
 
         self.documents["max_sentence_count"] = torch.tensor(max_sentence_count, dtype=torch.int64)
-
+        
         for label in self.fields[:-1]:
             with open(cache_path + "-" + label, 'wb') as f:
                 pickle.dump(len(self.documents['user_id']), f)
@@ -267,14 +212,62 @@ class SentimentDataset(Dataset):
                     self.documents[label] += pickle.load(f)
         self.documents["max_sentence_count"] = torch.load(load_path + "-max_sentence_count")
 
+    def make_input_id(self, sentences):
+        ret = []
+        mask = []
+        if self.cls_tag:
+            tag = self.tokenizer.convert_tokens_to_ids(["[CLS]"])
+            ret += tag
+            mask = [1]
+        pad = self.tokenizer.convert_tokens_to_ids(["[PAD]"])
+        for sentence in sentences:
+            ret += sentence
+            mask += len(sentence) * [1]
+            if len(ret) >= 512:
+                ret = ret[:512]
+                mask = mask[:512]
+                break
+        while len(ret) < 512:
+            ret += pad
+            mask += [0]
+        return ret, mask
 
     def __getitem__(self, idx):
-        doc = [self.documents[label][idx] for label in self.fields[:-1]
-                     ] + [self.documents["max_sentence_count"]]
-        return doc
+        user_id = self.documents["user_id"][idx]
+        product_id = self.documents["product_id"][idx]
+        label = self.documents["label"][idx]
+        input_ids, mask = self.make_input_id(self.documents["input_tokens"][idx])
+        t = lambda x: torch.tensor(x, dtype=torch.int64)
+        ret = (t(user_id), t(product_id), t(label), t(input_ids), t(mask))
+        return ret
 
     def __len__(self):
         return len(self.documents["user_id"])
+
+class SentenceMatrixDataset(SentimentDataset):
+
+    def __getitem__(self, idx):
+        user_id = self.documents["user_id"][idx]
+        product_id = self.documents["product_id"][idx]
+        label = self.documents["label"][idx]
+        sentence_matrix = self.make_sentence_matrix(idx)
+
+        return  user_id, product_id, label, sentence_matrix
+    
+    def make_sentence_matrix(self, idx):
+        ret = []
+        doc = self.documents["input_tokens"][idx]
+        if len(doc)>512:
+            doc = doc[:512]
+        for sentence in doc:
+            if len(sentence)>512:
+                sentence = sentence[:512]
+            ret.append(torch.tensor(sentence))
+        if len(ret) == 0:
+            pdb.set_trace()
+
+        return pad_sequence(ret, batch_first=True)
+
 
 
 userlist_filename = './data/yelp14/usrlist.txt'
@@ -289,4 +282,7 @@ if __name__ == '__main__':
     """ Just to test. """
     ds = SentimentDataset(train_file, userlist_filename,
                           productlist_filename, wordlist_filename, force_no_cache=True)
-    print(ds[0].sentence_matrix)
+    print(ds[0])
+    ds2 = SentenceMatrixDataset(train_file, userlist_filename,
+                                productlist_filename, wordlist_filename, force_no_cache=True)
+    print(ds2[0])

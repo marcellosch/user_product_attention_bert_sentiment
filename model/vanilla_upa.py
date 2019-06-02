@@ -29,10 +29,12 @@ class VanillaUPA(torch.nn.Module):
         self.sentence_attention = UserProductAttention(
             self.user_size, self.product_size, 200, self.hidden_size)
         self.linear = torch.nn.Linear(hidden_size, n_classes)
-        self.softmax = torch.nn.Softmax()
+        self.softmax = torch.nn.LogSoftmax(dim=1)
 
     def forward(self, batch):
-        user_ids, product_ids, _, _, _, _, sentence_matrix, max_sentence_count = batch
+        user_ids, product_ids, _, sentence_matrix = batch
+        assert sentence_matrix.shape[0]%user_ids.shape[0] == 0
+        max_sentence_count = sentence_matrix.shape[0] // user_ids.shape[0]
         user_embs = self.Uemb(user_ids)
         product_embs = self.Pemb(product_ids)
         word_embs = self.Wemb(sentence_matrix)
@@ -40,16 +42,17 @@ class VanillaUPA(torch.nn.Module):
         repeated_user_embs = user_embs.repeat_interleave(
             max_sentence_count, dim=0)
         repeated_product_embs = product_embs.repeat_interleave(
+            
             max_sentence_count, dim=0)
         word_attention_out = self.word_attention(
             lstm1_out, repeated_user_embs, repeated_product_embs)
         word_attention_out = word_attention_out.view(
-            -1, max_sentence_count, self.word_size)
+            -1, max_sentence_count, self.hidden_size)
         lstm2_out, _ = self.lstm2(word_attention_out)
         sentence_attention_out = self.sentence_attention(
             lstm2_out, user_embs, product_embs)
         linear_out = self.linear(sentence_attention_out)
-        softmax_out = self.softmax(linear_out)
+        softmax_out = self.softmax(linear_out.view(-1, self.n_classes))
         return softmax_out
 
     def train(self):

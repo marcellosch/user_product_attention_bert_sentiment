@@ -4,3 +4,4 @@ __pycache__/
 tags
 cache/
 *.swp
+pytorch_model.bin
