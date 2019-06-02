@@ -11,6 +11,7 @@ import numpy as np
 import zipfile
 import wget
 import numpy as np
+from pathlib import Path
 from torch.nn.utils.rnn import pad_sequence
 
 CACHE_PATH = './datadrive/cache/'
@@ -51,6 +52,7 @@ class SentimentDataset(Dataset):
 
         dataset, filename = document_file.split('/')[-2:]
         document_cache_path = CACHE_PATH +  dataset + "/" + document_file.split('/')[-1] 
+        Path(CACHE_PATH + dataset).mkdir(parents=True, exist_ok=True)
         is_cached = sum([os.path.isfile(document_cache_path + "-" + label)
                          for label in self.fields]) == len(self.fields)
         self.users, self.user_string2int = self.read_userlist(
