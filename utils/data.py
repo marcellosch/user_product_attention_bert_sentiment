@@ -13,7 +13,7 @@ import wget
 import numpy as np
 from torch.nn.utils.rnn import pad_sequence
 
-CACHE_PATH = '/datadrive/cache/'
+CACHE_PATH = './datadrive/cache/'
 DATASET_URL = 'http://www.thunlp.org/~chm/data/data.zip'
 
 
@@ -109,7 +109,7 @@ class SentimentDataset(Dataset):
     def read_userlist(self, filename):
         """ Read userlist from file containing one user id per line. """
         lines = list(map(lambda x: x.split(),
-                         open(userlist_filename, 'r+', encoding="utf-8").readlines()))
+                         open(filename, 'r+', encoding="utf-8").readlines()))
         user_list = [item[0] for item in lines]
 
         unique_users = list(set(user_list))
@@ -133,7 +133,7 @@ class SentimentDataset(Dataset):
     def read_vocabulary(self, filename):
         """ Read vocabulary from file containing one word per line. """
         lines = list(map(lambda x: x.split(),
-                         open(wordlist_filename, 'r+', encoding="utf-8").readlines()))
+                         open(filename, 'r+', encoding="utf-8").readlines()))
 
         word_list = [item[0] for item in lines]
         vocab = {word: idx for idx, word in enumerate(word_list)}
@@ -263,20 +263,18 @@ class SentenceMatrixDataset(SentimentDataset):
             if len(sentence)>512:
                 sentence = sentence[:512]
             ret.append(torch.tensor(sentence))
-        if len(ret) == 0:
-            pdb.set_trace()
 
         return pad_sequence(ret, batch_first=True)
 
 
 
-userlist_filename = './data/yelp14/usrlist.txt'
-productlist_filename = './data/yelp14/prdlist.txt'
-wordlist_filename = './data/yelp14/wordlist.txt'
-train_file = './data/yelp14/train.txt'
-dev_file = './data/yelp14/dev.txt'
-test_file = './data/yelp14/test.txt'
-
+#userlist_filename = './data/yelp14/usrlist.txt'
+#productlist_filename = './data/yelp14/prdlist.txt'
+#wordlist_filename = './data/yelp14/wordlist.txt'
+#train_file = './data/yelp14/train.txt'
+#dev_file = './data/yelp14/dev.txt'
+#test_file = './data/yelp14/test.txt'
+#
 
 if __name__ == '__main__':
     """ Just to test. """

@@ -3,7 +3,7 @@ from pathlib import Path
 from torch.utils.data import DataLoader, Dataset, RandomSampler, SequentialSampler, Subset
 from tqdm import tqdm
 from pytorch_pretrained_bert.optimization import BertAdam, WarmupLinearSchedule
-from utils.data import SentimentDataset, userlist_filename, productlist_filename, wordlist_filename, train_file, test_file
+from utils.data import SentimentDataset
 from argparse import ArgumentParser
 import logging
 import random
