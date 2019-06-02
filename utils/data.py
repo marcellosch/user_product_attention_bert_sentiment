@@ -61,11 +61,11 @@ class SentimentDataset(Dataset):
             wordlist_filename)
         if not is_cached or force_no_cache:
             self.read_documents(document_file, document_cache_path)
-            print("Preprocessed {0} documents and cached to disk.".format(
+            logging.info("Preprocessed {0} documents and cached to disk.".format(
                 len(self.documents["user_id"])))
         else:
             self.read_docs_from_cache(document_cache_path)
-            print("Loaded {0} documents from disk.".format(len(self.documents["user_id"])))
+            logging.info("Loaded {0} documents from disk.".format(len(self.documents["user_id"])))
 
     def preprocess(self, text, sentence_delimeter='.'):
         """
@@ -101,9 +101,6 @@ class SentimentDataset(Dataset):
                 begin = end+1
         if len(tokenized)-begin > 0:
             sentences.append(tokenized[begin:])
-
-        if len(sentences) == 0:
-            pdb.set_trace()
 
         sentences = [self.tokenizer.convert_tokens_to_ids(sentence) for sentence in sentences]
         return sentences, max_sentence_length
@@ -192,7 +189,7 @@ class SentimentDataset(Dataset):
                 max_sentence_count = len(input_tokens)
 
             if i % 5000 == 0:
-                print("Processed {0} of {1} documents. ({2:.1f}%)".format(
+                logging.info("Processed {0} of {1} documents. ({2:.1f}%)".format(
                     i, len(lines), i*100/len(lines)))
 
         self.documents["max_sentence_count"] = torch.tensor(max_sentence_count, dtype=torch.int64)
