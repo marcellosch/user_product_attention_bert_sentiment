@@ -7,7 +7,7 @@ from model.vanilla_upa import VanillaUPA
 if __name__ == "__main__":
     args = parse_args()
 
-    folder = './data/' + args.dataset 
+    folder = './data/' + args.dataset
 
     userlist_filename = folder + '/usrlist.txt'
     productlist_filename = folder + '/prdlist.txt'
@@ -17,9 +17,9 @@ if __name__ == "__main__":
     test_file = folder + '/test.txt'
 
     train_dat = SentenceMatrixDataset(train_file, userlist_filename, productlist_filename,
-                                 wordlist_filename, force_no_cache=args.force_document_processing)
+                                      wordlist_filename, force_no_cache=args.force_document_processing)
     dev_dat = SentenceMatrixDataset(dev_file, userlist_filename, productlist_filename,
-                               wordlist_filename, force_no_cache=args.force_document_processing)
+                                    wordlist_filename, force_no_cache=args.force_document_processing)
 
     n_user = len(train_dat.users)
     n_product = len(train_dat.products)

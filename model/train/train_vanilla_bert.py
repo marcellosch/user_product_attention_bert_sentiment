@@ -6,7 +6,7 @@ from model.vanilla_bert import VanillaBert
 if __name__ == "__main__":
     args = parse_args()
 
-    folder = './data/' + args.dataset 
+    folder = './data/' + args.dataset
 
     userlist_filename = folder + '/usrlist.txt'
     productlist_filename = folder + '/prdlist.txt'

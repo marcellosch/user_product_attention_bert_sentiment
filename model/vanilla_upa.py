@@ -32,7 +32,7 @@ class VanillaUPA(torch.nn.Module):
 
     def forward(self, batch):
         user_ids, product_ids, _, sentence_matrix = batch
-        assert sentence_matrix.shape[0]%user_ids.shape[0] == 0
+        assert sentence_matrix.shape[0] % user_ids.shape[0] == 0
         max_sentence_count = sentence_matrix.shape[0] // user_ids.shape[0]
         user_embs = self.Uemb(user_ids)
         product_embs = self.Pemb(product_ids)
@@ -41,7 +41,7 @@ class VanillaUPA(torch.nn.Module):
         repeated_user_embs = user_embs.repeat_interleave(
             max_sentence_count, dim=0)
         repeated_product_embs = product_embs.repeat_interleave(
-            
+
             max_sentence_count, dim=0)
         word_attention_out = self.word_attention(
             lstm1_out, repeated_user_embs, repeated_product_embs)
