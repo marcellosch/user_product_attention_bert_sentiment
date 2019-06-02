@@ -22,6 +22,7 @@ if __name__ == "__main__":
                                wordlist_filename, force_no_cache=args.force_document_processing)
 
     # Determine model parameter
+    n_classes = train_dat.get_n_classes()
 
-    model = VanillaBert(args.n_classes)
+    model = VanillaBert(n_classes)
     train(model, train_dat, dev_dat, args)

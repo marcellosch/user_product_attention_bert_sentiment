@@ -13,6 +13,11 @@ import wget
 import numpy as np
 from pathlib import Path
 from torch.nn.utils.rnn import pad_sequence
+import logging
+
+log_format = '%(asctime)-10s: %(message)s'
+logging.basicConfig(level=logging.INFO, format=log_format)
+
 
 CACHE_PATH = './datadrive/cache/'
 # DATASET_URL = 'http://www.thunlp.org/~chm/data/data.zip'
@@ -30,6 +35,7 @@ class SentimentDataset(Dataset):
     """
 
     def __init__(self, document_file, userlist_filename, productlist_filename, wordlist_filename, cls_tag=True, force_no_cache=False, chunk_size=5000):
+        self.n_classes = None
         self.cls_tag = cls_tag
         self.documents = dict()
         self.fields = ["user_id", "product_id", "label", "input_tokens", "max_sentence_length", "max_sentence_count"]
@@ -109,6 +115,11 @@ class SentimentDataset(Dataset):
 
         sentences = [self.tokenizer.convert_tokens_to_ids(sentence) for sentence in sentences]
         return sentences, max_sentence_length
+    def get_n_classes(self):
+        if not self.n_classes:
+            self.n_classes = len(set(self.documents["label"]))
+            logging.info("found {} distinct classes in dataset".format(self.n_classes))
+        return self.n_classes
 
     def read_userlist(self, filename):
         """ Read userlist from file containing one user id per line. """

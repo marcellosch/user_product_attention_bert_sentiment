@@ -12,6 +12,7 @@ import pdb
 from torch.utils.data._utils.collate import default_collate
 import json
 import os
+from pathlib import Path
 
 def cat_collate(batch):
     """ Concats the batches instead of stacking them like in the default_collate. """
@@ -93,12 +94,12 @@ def parse_args():
     # Argument parsing
     parser = ArgumentParser()
     # parser.add_argument('--preprocessed_data', type=Path, required=True)
-    parser.add_argument('--output_dir', type=Path, required=True)
+    parser.add_argument('--output_dir', type=Path, default=Path("training_output"))
     parser.add_argument("--epochs", type=int, default=3,
                         help="Number of epochs to train for")
     parser.add_argument("--no_cuda", action='store_true',
                         help="Whether or not to use CUDA")
-    parser.add_argument("--gradient_accumulation_steps", type=int, default=1)
+    parser.add_argument("--gradient_accumulation_steps", type=int, default=8)
     parser.add_argument("--train_batch_size", default=32, type=int)
     parser.add_argument("--eval_batch_size", default=32, type=int)
     parser.add_argument("--fp16", action='store_true')
@@ -127,9 +128,8 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
     dev_results = []
     test_results = []
 
-    out_folder = args.output_dir / model.__class__.__name__   
-    if not os.path.isdir(out_folder):
-        os.makedirs(out_folder)
+    out_folder = args.output_dir / model.__class__.__name__ / args.dataset / str(args.learning_rate).split(".")[-1]
+    out_folder.mkdir(parents=True, exist_ok=True)
     out_args_path = out_folder / "args.json"
     out_results_path = out_folder / "results.json"
     save_args_to_file(out_args_path, args)
