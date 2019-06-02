@@ -4,4 +4,4 @@ __pycache__/
 tags
 cache/
 *.swp
-training_output/
+pytorch_model.bin
