@@ -8,16 +8,18 @@ from argparse import ArgumentParser
 import logging
 import random
 import numpy as np
-import pdb
 from torch.utils.data._utils.collate import default_collate
 import json
 import os
+from pathlib import Path
+
 
 def cat_collate(batch):
     """ Concats the batches instead of stacking them like in the default_collate. """
     max_words_in_sentence = max([b[3].shape[1] for b in batch])
     max_sentences_in_docs = max([b[3].shape[0] for b in batch])
-    sentence_matrix = torch.zeros(len(batch) * max_sentences_in_docs, max_words_in_sentence, dtype=torch.int64)
+    sentence_matrix = torch.zeros(
+        len(batch) * max_sentences_in_docs, max_words_in_sentence, dtype=torch.int64)
     for i, doc in enumerate(batch):
         height, width = doc[3].shape
         begin_row = i*max_sentences_in_docs
@@ -30,6 +32,7 @@ def cat_collate(batch):
     label = torch.tensor([b[2] for b in batch], dtype=torch.int64)
     return (user_id, product_id, label, sentence_matrix)
 
+
 def eval_on_data(model, data, batch_size, device, use_cat_collate=False, step=None):
     # Run prediction for full data
 
@@ -37,7 +40,7 @@ def eval_on_data(model, data, batch_size, device, use_cat_collate=False, step=No
         collate_fn = cat_collate
     else:
         collate_fn = default_collate
-    
+
     if not step is None:
         inds = np.random.choice(range(len(data)), 2000)
         data = Subset(data, inds)
@@ -69,7 +72,7 @@ def eval_on_data(model, data, batch_size, device, use_cat_collate=False, step=No
 
         eval_loss += tmp_eval_loss.mean().item()
         nb_eval_steps += 1
-        
+
         # if len(preds) == 0:
         #     preds.append(logits.detach().cpu().numpy())
         # else:
@@ -93,12 +96,13 @@ def parse_args():
     # Argument parsing
     parser = ArgumentParser()
     # parser.add_argument('--preprocessed_data', type=Path, required=True)
-    parser.add_argument('--output_dir', type=Path, required=True)
+    parser.add_argument('--output_dir', type=Path,
+                        default=Path("training_output"))
     parser.add_argument("--epochs", type=int, default=3,
                         help="Number of epochs to train for")
     parser.add_argument("--no_cuda", action='store_true',
                         help="Whether or not to use CUDA")
-    parser.add_argument("--gradient_accumulation_steps", type=int, default=1)
+    parser.add_argument("--gradient_accumulation_steps", type=int, default=8)
     parser.add_argument("--train_batch_size", default=32, type=int)
     parser.add_argument("--eval_batch_size", default=32, type=int)
     parser.add_argument("--fp16", action='store_true')
@@ -115,6 +119,7 @@ def parse_args():
     parser.add_argument("--force_document_processing",
                         action="store_true", help="Force document preprocessing")
     parser.add_argument("--dataset", default="yelp14", type=str)
+    parser.add_argument("--n_classes", default=5, type=int)
     args = parser.parse_args()
 
     return args
@@ -126,9 +131,9 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
     dev_results = []
     test_results = []
 
-    out_folder = args.output_dir / model.__class__.__name__   
-    if not os.path.isdir(out_folder):
-        os.makedirs(out_folder)
+    out_folder = args.output_dir / model.__class__.__name__ / \
+        args.dataset / str(args.learning_rate).split(".")[-1]
+    out_folder.mkdir(parents=True, exist_ok=True)
     out_args_path = out_folder / "args.json"
     out_results_path = out_folder / "results.json"
     save_args_to_file(out_args_path, args)
@@ -217,8 +222,8 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
     for epoch in range(args.epochs):
         train_sampler = RandomSampler(train_dat)
         train_dataloader = DataLoader(train_dat,
-                                      sampler=train_sampler, 
-                                      batch_size=args.train_batch_size, 
+                                      sampler=train_sampler,
+                                      batch_size=args.train_batch_size,
                                       collate_fn=collate_fn)
         tr_loss = 0
         nb_tr_steps = 0
@@ -250,36 +255,46 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
                     if args.fp16:
                         # modify learning rate with special warm up BERT uses
                         # if args.fp16 is False, BertAdam is used that handles this automatically
-                        lr_this_step = args.learning_rate * warmup_linear.get_lr(global_step, args.warmup_proportion)
+                        lr_this_step = args.learning_rate * \
+                            warmup_linear.get_lr(
+                                global_step, args.warmup_proportion)
                         for param_group in optimizer.param_groups:
                             param_group['lr'] = lr_this_step
                     optimizer.step()
                     optimizer.zero_grad()
                     global_step += 1
 
-                if (step+1) % 1000 == 0:
-                    dev_acc, dev_loss = eval_on_data(model, dev_dat, args.eval_batch_size, device, use_cat_collate=use_cat_collate, step=step)
-                    train_acc, train_loss = eval_on_data(model, train_dat , args.eval_batch_size, device, use_cat_collate=use_cat_collate, step=step)
-                    logging.info("Step: {} Training loss: {}, acc: {}, Dev loss: {}, acc: {}\n\n".format(step, train_loss, train_acc, dev_loss, dev_acc))
+                if (step+1) % 20000 == 0:
+                    dev_acc, dev_loss = eval_on_data(
+                        model, dev_dat, args.eval_batch_size, device, use_cat_collate=use_cat_collate, step=step)
+                    train_acc, train_loss = eval_on_data(
+                        model, train_dat, args.eval_batch_size, device, use_cat_collate=use_cat_collate, step=step)
+                    logging.info("Step: {} Training loss: {}, acc: {}, Dev loss: {}, acc: {}\n\n".format(
+                        step, train_loss, train_acc, dev_loss, dev_acc))
                     model.train()
 
         logging.info("***** Running evaluation on train set *****")
         logging.info("  Num examples = %d", len(train_dat))
         logging.info("  Batch size = %d", args.train_batch_size)
-        
-        train_acc, train_loss = eval_on_data(model, train_dat, args.train_batch_size, device, use_cat_collate=use_cat_collate, step=step)
-        logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, train_acc, train_loss))
+
+        train_acc, train_loss = eval_on_data(
+            model, train_dat, args.train_batch_size, device, use_cat_collate=use_cat_collate, step=step)
+        logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(
+            epoch, train_acc, train_loss))
         train_results.append((train_acc, train_loss))
 
         logging.info("***** Running evaluation on dev set *****")
         logging.info("  Num examples = %d", len(dev_dat))
         logging.info("  Batch size = %d", args.eval_batch_size)
 
-        dev_acc, dev_loss = eval_on_data(model, dev_dat, args.train_batch_size, device, use_cat_collate=use_cat_collate)
-        logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(epoch, dev_acc, dev_loss))
+        dev_acc, dev_loss = eval_on_data(
+            model, dev_dat, args.train_batch_size, device, use_cat_collate=use_cat_collate)
+        logging.info(" Epoch = {0}, Accuracy = {1:.3f}, Loss = {2:.3f}".format(
+            epoch, dev_acc, dev_loss))
         dev_results.append((dev_acc, dev_loss))
 
-        save_results_to_file(out_results_path, train_results, dev_results, test_results)
+        save_results_to_file(out_results_path, train_results,
+                             dev_results, test_results)
 
     # Save a trained model
     logging.info("** ** * Saving fine-tuned model ** ** * ")
@@ -288,7 +303,9 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
     output_model_file = out_folder / "pytorch_model.bin"
     torch.save(model_to_save.state_dict(), str(output_model_file))
 
-    save_results_to_file(out_results_path, train_results, dev_results, test_results)
+    save_results_to_file(out_results_path, train_results,
+                         dev_results, test_results)
+
 
 def save_results_to_file(path, train_results, dev_results, test_results):
     results = {
@@ -299,7 +316,8 @@ def save_results_to_file(path, train_results, dev_results, test_results):
     with open(path, 'w') as f:
         json.dump(results, f)
 
+
 def save_args_to_file(path, args):
     args_dict = vars(args)
     with open(path, 'w') as f:
-        json.dump({k: str(v) for k,v in args_dict.items()}, f)
+        json.dump({k: str(v) for k, v in args_dict.items()}, f)

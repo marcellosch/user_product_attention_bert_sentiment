@@ -6,7 +6,7 @@ from model.vanilla_bert import VanillaBert
 if __name__ == "__main__":
     args = parse_args()
 
-    folder = './data/' + args.dataset 
+    folder = './data/' + args.dataset
 
     userlist_filename = folder + '/usrlist.txt'
     productlist_filename = folder + '/prdlist.txt'
@@ -15,14 +15,13 @@ if __name__ == "__main__":
     dev_file = folder + '/dev.txt'
     test_file = folder + '/test.txt'
 
-    # Read training and test datasets
     train_dat = SentimentDataset(train_file, userlist_filename, productlist_filename,
                                  wordlist_filename, force_no_cache=args.force_document_processing)
     dev_dat = SentimentDataset(test_file, userlist_filename, productlist_filename,
                                wordlist_filename, force_no_cache=args.force_document_processing)
 
     # Determine model parameter
-    n_classes = 5
+    n_classes = train_dat.get_n_classes()
 
     model = VanillaBert(n_classes)
     train(model, train_dat, dev_dat, args)
