@@ -26,7 +26,7 @@ class UPABert(torch.nn.Module):
         self.lstm = torch.nn.LSTM(hidden_size, hidden_size)
         self.sentence_attention = UserProductAttention()
         self.linear = torch.nn.Linear(self.hidden_size, self.n_classes)
-        self.softmax = torch.nn.LogSoftmax()
+        self.softmax = torch.nn.LogSoftmax(dim=1)
 
     def forward(self, batch):
         """ Inputs:
@@ -50,7 +50,7 @@ class UPABert(torch.nn.Module):
         sentence_attention_out = self.sentence_attention(
             lstm_out, user_embs, product_embs)
         linear_out = self.linear(sentence_attention_out)
-        softmax_out = self.softmax(linear_out)
+        softmax_out = self.softmax(linear_out.view(-1, self.n_classes))
         return softmax_out
 
     def train(self):
@@ -58,3 +58,11 @@ class UPABert(torch.nn.Module):
 
     def eval(self):
         self.bert.eval()
+
+    def to(self, *args, **kwargs):
+        self = super().to(*args, **kwargs)
+        self.word_attention.to(*args, **kwargs)
+        self.sentence_attention.to(*args, **kwargs)
+        return self
+
+
