@@ -10,6 +10,7 @@ logging.basicConfig(level=logging.INFO, format=log_format)
 class UPABert(torch.nn.Module):
 
     def __init__(self, n_user, n_product, n_classes, user_size=200, product_size=200, attention_hidden_size=200, hidden_size=768):
+        super(UPABert, self).__init__()
         self.n_user = n_user
         self.n_product = n_product
         self.n_classes = n_classes
@@ -36,7 +37,7 @@ class UPABert(torch.nn.Module):
             `product_ids`: torch.LongTensor of shape [batch_size] that denotes the product ids for documents
         """
         user_ids, product_ids, _, sentence_matrix = batch
-        max_sentence_count = sentence_matrix.shape[0] == 0
+        max_sentence_count = sentence_matrix.shape[0] //user_ids.shape[0]
         user_embs = self.Uemb(user_ids)
         product_embs = self.Pemb(product_ids)
         bert_out, _ = self.bert(sentence_matrix, output_all_encoded_layers=False)
