@@ -36,15 +36,13 @@ class UPABert(torch.nn.Module):
             `user_ids`: torch.LongTensor of shape [batch_size] that denotes the user id for documents
             `product_ids`: torch.LongTensor of shape [batch_size] that denotes the product ids for documents
         """
-        user_ids, product_ids, _, sentence_matrix = batch
+        user_ids, product_ids, _, input_ids, attention_mask, sentence_offsets = batch
         max_sentence_count = sentence_matrix.shape[0] //user_ids.shape[0]
         user_embs = self.Uemb(user_ids)
         product_embs = self.Pemb(product_ids)
-        bert_out, _ = self.bert(sentence_matrix, output_all_encoded_layers=False)
-        repeated_user_embs = user_embs.repeat_interleave(max_sentence_count, dim=0)
-        repeated_product_embs = product_embs.repeat_interleave(max_sentence_count, dim=0)
+        bert_out, _ = self.bert(sentence_matrix, output_all_encoded_layers=False, attention_mask=attention_mask)
         word_attention_out = self.word_attention(
-            bert_out, repeated_user_embs, repeated_product_embs)
+            bert_out, user_embs, product_embs, sentence_offsets)
         word_attention_out = word_attention_out.view(-1, max_sentence_count, self.hidden_size)
         lstm_out, _ = self.lstm(word_attention_out)
         sentence_attention_out = self.sentence_attention(

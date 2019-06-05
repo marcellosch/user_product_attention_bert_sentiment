@@ -47,6 +47,26 @@ class UserProductAttention(torch.nn.Module):
             # [batch_size, hidden_size]
             return H.transpose(1, 2).matmul(alphas).squeeze()
         else:  # inputs have to be softmaxed in groups defined by sentence_offsets
-            # TODO: implement softmax relative to offsets
-            out = torch.Tensor(seq_len, )
+            ret = []
+            batch_size, max_sentence_count = sentence_offsets.shape
+            for b in range(batch_size):
+                sentence_representation = []
+                for s in range(max_sentence_count):
+                    if s == -1:
+                        break
+                    beg = 1 if s==0 else sentence_offsets[s]
+                    end = 512 if s==max_sentence_count-1 else sentence_offsets[s+1]-1
+                    
+                    raw_alphas = self.v(self.tanh(Ht[b,beg:end,:] + ut[b,beg:end,:] + pt[b,beg:end,:] + bt[b,beg:end,:]))
+                    alphas = selfsoftmax(raw_alphas)
+                    sentence_representation.append(H[b,beg:end,:].transpose(1,2).matmul(alphas).squeeze())
+                sentence_representation = torch.stack(sentence_representation)
+                ret = ret.append(sentence_representation)
+            ret = torch.stack(ret)
+            return ret
+
+
+
+
+
             pass

@@ -282,3 +282,37 @@ class SentenceMatrixDataset(SentimentDataset):
             ret.append(torch.tensor(sentence))
 
         return pad_sequence(ret, batch_first=True)
+
+
+class SentenceOffsetDataset(SentimentDataset):
+    def __init__(self,*args, **kwargs):
+        super.__init__(self, *args, **kwargs)
+        self.max_sentence_count = max([len(d) for d in self.documents["input_tokens"]])
+
+    def __getitem__(self, idx):
+        user_id = self.documents["user_id"][idx]
+        product_id = self.documents["product_id"][idx]
+        label = self.documents["label"][idx]
+        input_ids, mask = self.make_input_id(
+            self.documents["input_tokens"][idx])
+        sentence_offsets = self.make_sentence_offsets(
+            self.documents["input_tokens"][idx])
+
+        def t(x): return torch.tensor(x, dtype=torch.int64)
+        ret = (t(user_id),
+               t(product_id),
+               t(label),
+               t(input_ids),
+               t(mask),
+               t(sentence_offsets))
+        return ret
+
+    def make_sentence_offsets(sentences):
+        lengths = [len(s) for s in sentences]
+        cumsum = [1]
+        for l in lengths:
+            if cumsum[-1] + l > 512:
+                break
+            cumsum.append(cumsum[-1] + l)
+        ret = (cumsum + [-1] * 512)[:512]
+        return ret

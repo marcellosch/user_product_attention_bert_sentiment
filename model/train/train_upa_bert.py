@@ -16,9 +16,9 @@ if __name__ == "__main__":
     dev_file = folder + '/dev.txt'
     test_file = folder + '/test.txt'
 
-    train_dat = SentenceMatrixDataset(train_file, userlist_filename, productlist_filename,
+    train_dat = SentenceOffsetDataset(train_file, userlist_filename, productlist_filename,
                                       wordlist_filename, force_no_cache=args.force_document_processing)
-    dev_dat = SentenceMatrixDataset(dev_file, userlist_filename, productlist_filename,
+    dev_dat = SentenceOffsetDataset(dev_file, userlist_filename, productlist_filename,
                                     wordlist_filename, force_no_cache=args.force_document_processing)
 
     n_user = len(train_dat.users)
