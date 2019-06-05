@@ -125,7 +125,7 @@ def parse_args():
     return args
 
 
-def train(model, train_dat, dev_dat, args, use_cat_collate=False):
+def train(model, train_dat, dev_dat, test_dat, args, use_cat_collate=False):
 
     train_results = []
     dev_results = []
@@ -295,6 +295,10 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
 
         save_results_to_file(out_results_path, train_results,
                              dev_results, test_results)
+
+    test_acc, test_loss = eval_on_data(model, test_dat, args.eval_batch_size, device, use_cat_collate=use_cat_collate, step=step)
+    logging.info("Final evaluation on test dataset. Accuracy {0}.".format(test_acc))
+    test_results.append((test_acc, test_loss))
 
     # Save a trained model
     logging.info("** ** * Saving fine-tuned model ** ** * ")

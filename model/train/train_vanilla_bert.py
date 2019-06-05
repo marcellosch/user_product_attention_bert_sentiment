@@ -15,13 +15,13 @@ if __name__ == "__main__":
     dev_file = folder + '/dev.txt'
     test_file = folder + '/test.txt'
 
-    train_dat = SentimentDataset(train_file, userlist_filename, productlist_filename,
-                                 wordlist_filename, force_no_cache=args.force_document_processing)
-    dev_dat = SentimentDataset(test_file, userlist_filename, productlist_filename,
-                               wordlist_filename, force_no_cache=args.force_document_processing)
+    create_dataset = lambda doc_file: SentimentDataset(doc_file, userlist_filename, productlist_filename,
+                            wordlist_filename, force_no_cache=args.force_document_processing)
+
+    train_dat, dev_dat, test_dat = create_dataset(train_file), create_dataset(dev_file), create_dataset(test_file)
 
     # Determine model parameter
     n_classes = train_dat.get_n_classes()
 
     model = VanillaBert(n_classes)
-    train(model, train_dat, dev_dat, args)
+    train(model, train_dat, dev_dat, test_dat, args)
