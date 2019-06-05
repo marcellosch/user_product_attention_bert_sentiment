@@ -27,13 +27,12 @@ class SimpleUPABert(torch.nn.Module):
         self.softmax = torch.nn.LogSoftmax(dim=1)
 
     def forward(self, batch):
-        """ Inputs:
-            `input_ids`: Tensor of shape [batch_size, max_seq_length] containing one documents word ids per row
-            `input_mask`: torch.LongTensor of shape [batch_size, max_seq_length] with indices in [0,1]. The mask is used to mask sentences that are shorter than max_seq_length
-            list of dicts: input_ids, input mask, token_type_ids, user_id, product_id, sentence_offsets
-            `user_ids`: torch.LongTensor of shape [batch_size] that denotes the user id for documents
-            `product_ids`: torch.LongTensor of shape [batch_size] that denotes the product ids for documents
-            `sentence_offsets`: list of batch_size iterables where each contains the integer offsets of the sentence starts in document
+        """
+            user_ids [batch_size]
+            product_ids [batch_size]
+            input_ids [batch_size, 512]
+            input_mask [batch_size, 512]
+
         """
         user_ids, product_ids, _, input_ids, input_mask = batch
         user_embs = self.Uemb(user_ids)
@@ -47,7 +46,6 @@ class SimpleUPABert(torch.nn.Module):
         return softmax_out
 
     def train(self):
-        # this is called in the pytorch example, I dont't know why
         self.bert.train()
 
     def eval(self):

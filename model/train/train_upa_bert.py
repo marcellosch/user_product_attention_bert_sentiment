@@ -1,7 +1,7 @@
 #! /usr/bin/python3
 from model.train.train import parse_args, train
-from utils.data import SentenceMatrixDataset
-from model.vanilla_upa import VanillaUPA
+from utils.data import SentenceOffsetDataset
+from model.upa_bert import UPABert
 
 
 if __name__ == "__main__":
@@ -16,8 +16,8 @@ if __name__ == "__main__":
     dev_file = folder + '/dev.txt'
     test_file = folder + '/test.txt'
 
-    create_dataset = lambda doc_file: SentenceMatrixDataset(doc_file, userlist_filename, productlist_filename,
-                        wordlist_filename, force_no_cache=args.force_document_processing)
+    create_dataset = lambda doc_file: SentenceOffsetDataset(doc_file, userlist_filename, productlist_filename,
+                                wordlist_filename, force_no_cache=args.force_document_processing)
 
     train_dat, dev_dat, test_dat = create_dataset(train_file), create_dataset(dev_file), create_dataset(test_file)
 
@@ -25,6 +25,6 @@ if __name__ == "__main__":
     n_product = len(train_dat.products)
     n_classes = train_dat.get_n_classes()
 
-    model = VanillaUPA(n_user, n_product, args.n_classes, args.user_size,
+    model = UPABert(n_user, n_product, args.n_classes, args.user_size,
                        args.product_size, args.attention_hidden_size)
-    train(model, train_dat, dev_dat, test_dat, args, use_cat_collate=True)
+    train(model, train_dat, dev_dat, test_dat, args, use_cat_collate=False)

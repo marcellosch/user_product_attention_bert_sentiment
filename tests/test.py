@@ -18,33 +18,44 @@ class TestModel(unittest.TestCase):
 
     def test_SimpleUPABert(self):
         supb = SimpleUPABert(n_user=100, n_product=200, n_classes=5)
-        input_ids = (torch.rand(2, 512)*800).long()
+        input_ids = torch.rand(2, 512).long()
         input_mask = torch.ones(2, 512).long()
-        user_ids = (torch.rand(2) * 100).long()
-        product_ids = (torch.rand(2)*200).long()
+        user_ids = (torch.rand(2)).long()
+        product_ids = (torch.rand(2)).long()
         batch = (user_ids, product_ids, None,
-                 input_ids, None, input_mask, None, None)
+                 input_ids, input_mask)
         out = supb(batch)
         self.assertEqual(out.shape, (2, 5))
 
     def test_VanillaBert(self):
         vbert = VanillaBert(n_classes=5)
-        input_ids = (torch.rand(2, 512)*800).long()
+        input_ids = torch.rand(2, 512).long()
         input_mask = torch.ones(2, 512).long()
-        batch = (None, None, None, input_ids, None, input_mask, None, None)
+        batch = (None, None, None, input_ids, input_mask)
         out = vbert(batch)
         self.assertEqual(out.shape, (2, 5))
 
+    def test_UPABert(self):
+        upab = UPABert(n_user=100, n_product=200,
+                          n_classes=5, hidden_size=768)
+        user_ids = torch.rand(5).long()
+        product_ids = torch.rand(5).long()
+        sentence_matrix = torch.rand(10 * 5, 5).long()
+        batch = (user_ids, product_ids, None,
+                 sentence_matrix)
+        out = upab(batch)
+        self.assertEqual(out.shape, (5, 5))
+
     def test_VanillaUPA(self):
-        vupa = VanillaUPA(n_user=100, n_product=200, n_classes=5, hidden_size=768)
+        vupa = VanillaUPA(n_user=100, n_product=200,
+                          n_classes=5, hidden_size=768)
         user_ids = (torch.rand(5)).long()
         product_ids = (torch.rand(5)).long()
         sentence_matrix = (torch.rand(10 * 5, 5)).long()
         batch = (user_ids, product_ids, None,
-                 None, None, None, sentence_matrix, 10)
+                 sentence_matrix)
         out = vupa(batch)
-        print(out.shape)
-        #self.assertEqual(out.shape, (5, 5))
+        self.assertEqual(out.shape, (5, 5))
 
 
 if __name__ == '__main__':
