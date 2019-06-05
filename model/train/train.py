@@ -307,7 +307,7 @@ def train(model, train_dat, dev_dat, args, use_cat_collate=False):
                          dev_results, test_results)
 
 
-def save_results_to_file(path, train_results, dev_results, test_results):
+def save_results_to_file(path, train_results=[], dev_results=[], test_results=[]):
     results = {
         'train_data': train_results,
         'dev_data': dev_results,
@@ -316,7 +316,7 @@ def save_results_to_file(path, train_results, dev_results, test_results):
     with open(path, 'w') as f:
         json.dump(results, f)
 
-
+ 
 def save_args_to_file(path, args):
     args_dict = vars(args)
     with open(path, 'w') as f:
