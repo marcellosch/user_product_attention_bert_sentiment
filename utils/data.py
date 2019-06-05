@@ -286,7 +286,7 @@ class SentenceMatrixDataset(SentimentDataset):
 
 class SentenceOffsetDataset(SentimentDataset):
     def __init__(self,*args, **kwargs):
-        super.__init__(self, *args, **kwargs)
+        super(SentenceOffsetDataset, self).__init__(*args, **kwargs)
         self.max_sentence_count = max([len(d) for d in self.documents["input_tokens"]])
 
     def __getitem__(self, idx):
@@ -307,7 +307,7 @@ class SentenceOffsetDataset(SentimentDataset):
                t(sentence_offsets))
         return ret
 
-    def make_sentence_offsets(sentences):
+    def make_sentence_offsets(self, sentences):
         lengths = [len(s) for s in sentences]
         cumsum = [1]
         for l in lengths:

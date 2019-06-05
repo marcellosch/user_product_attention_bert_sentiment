@@ -1,6 +1,6 @@
 #! /usr/bin/python3
 from model.train.train import parse_args, train
-from utils.data import SentenceMatrixDataset
+from utils.data import SentenceOffsetDataset
 from model.upa_bert import UPABert
 
 
@@ -27,4 +27,4 @@ if __name__ == "__main__":
 
     model = UPABert(n_user, n_product, args.n_classes, args.user_size,
                        args.product_size, args.attention_hidden_size)
-    train(model, train_dat, dev_dat, args, use_cat_collate=True)
+    train(model, train_dat, dev_dat, args, use_cat_collate=False)

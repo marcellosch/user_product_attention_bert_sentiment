@@ -1,3 +1,4 @@
+import pdb
 import torch
 import logging
 from pytorch_pretrained_bert.modeling import BertModel
@@ -37,13 +38,11 @@ class UPABert(torch.nn.Module):
             `product_ids`: torch.LongTensor of shape [batch_size] that denotes the product ids for documents
         """
         user_ids, product_ids, _, input_ids, attention_mask, sentence_offsets = batch
-        max_sentence_count = sentence_matrix.shape[0] //user_ids.shape[0]
         user_embs = self.Uemb(user_ids)
         product_embs = self.Pemb(product_ids)
-        bert_out, _ = self.bert(sentence_matrix, output_all_encoded_layers=False, attention_mask=attention_mask)
+        bert_out, _ = self.bert(input_ids, output_all_encoded_layers=False, attention_mask=attention_mask)
         word_attention_out = self.word_attention(
             bert_out, user_embs, product_embs, sentence_offsets)
-        word_attention_out = word_attention_out.view(-1, max_sentence_count, self.hidden_size)
         lstm_out, _ = self.lstm(word_attention_out)
         sentence_attention_out = self.sentence_attention(
             lstm_out, user_embs, product_embs)
