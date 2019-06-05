@@ -30,6 +30,7 @@ class UserProductAttention(torch.nn.Module):
         """expect H in [batch_size, seq_len, hidden_size]
                   u in [batch_size, user_size]
                   p in [batch_size, product_size] 
+
         """
         batch_size, seq_len, _ = H.shape
         ut = self.Wu(u)  # [batch_size,out_size]
@@ -48,6 +49,28 @@ class UserProductAttention(torch.nn.Module):
             # [batch_size, hidden_size]
             return H.transpose(1, 2).matmul(alphas).squeeze()
         else:  # inputs have to be softmaxed in groups defined by sentence_offsets
-            # TODO: implement softmax relative to offsets
-            out = torch.Tensor(seq_len, )
+            ret = []
+            batch_size, max_sentence_count = sentence_offsets.shape
+            for b in range(batch_size):
+                sentence_representation = []
+                for s in range(max_sentence_count-1):
+                    if sentence_offsets[b,s].item() == -1:
+                        break
+
+                
+                    beg = sentence_offsets[b,s]
+                    end = 512 if sentence_offsets[b,s+1]==-1 else sentence_offsets[b,s+1]-1
+                    
+                    raw_alphas = self.v(self.tanh(Ht[b,beg:end,:] + ut[b,beg:end,:] + pt[b,beg:end,:] + bt[b,beg:end,:]))
+                    alphas = self.softmax(raw_alphas)
+                    sentence_representation.append(H[b,beg:end,:].transpose(0,1).matmul(alphas).squeeze())
+                sentence_representation = torch.stack(sentence_representation)
+                ret.append(sentence_representation)
+            ret = torch.nn.utils.rnn.pad_sequence(ret, batch_first=True)
+            return ret
+
+
+
+
+
             pass
