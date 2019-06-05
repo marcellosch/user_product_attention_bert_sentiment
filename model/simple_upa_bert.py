@@ -27,6 +27,13 @@ class SimpleUPABert(torch.nn.Module):
         self.softmax = torch.nn.LogSoftmax(dim=1)
 
     def forward(self, batch):
+        """
+            user_ids [batch_size]
+            product_ids [batch_size]
+            input_ids [batch_size, 512]
+            input_mask [batch_size, 512]
+
+        """
         user_ids, product_ids, _, input_ids, input_mask = batch
         user_embs = self.Uemb(user_ids)
         product_embs = self.Pemb(product_ids)
