@@ -25,6 +25,6 @@ if __name__ == "__main__":
     n_product = len(train_dat.products)
     n_classes = train_dat.get_n_classes()
 
-    model = VanillaUPA(n_user, n_product, args.n_classes, args.user_size,
+    model = VanillaUPA(n_user, n_product, n_classes, args.user_size,
                        args.product_size, args.attention_hidden_size)
     train(model, train_dat, dev_dat, test_dat, args, use_cat_collate=True)
