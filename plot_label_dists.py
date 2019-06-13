@@ -32,4 +32,4 @@ for i, s in enumerate(datasets):
     ax[i].set_title(s)
     
 ### Save image to folder
-fig.savefig(out_file, dpi=200)
+fig.savefig(out_file, dpi=200, pad_inches=0, bbox_inches='tight')
