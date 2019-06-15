@@ -23,7 +23,8 @@ class UPABert(torch.nn.Module):
         self.Uemb = torch.nn.Embedding(n_user, user_size)
         self.Pemb = torch.nn.Embedding(n_product, product_size)
         self.bert = BertModel.from_pretrained("bert-base-uncased")
-        self.word_attention = UserProductAttention(user_size, product_size, attention_hidden_size, hidden_size)
+        self.word_attention = UserProductAttention(
+            user_size, product_size, attention_hidden_size, hidden_size)
         self.lstm = torch.nn.LSTM(hidden_size, hidden_size)
         self.sentence_attention = UserProductAttention()
         self.linear = torch.nn.Linear(self.hidden_size, self.n_classes)
@@ -40,7 +41,8 @@ class UPABert(torch.nn.Module):
         user_ids, product_ids, _, input_ids, attention_mask, sentence_offsets = batch
         user_embs = self.Uemb(user_ids)
         product_embs = self.Pemb(product_ids)
-        bert_out, _ = self.bert(input_ids, output_all_encoded_layers=False, attention_mask=attention_mask)
+        bert_out, _ = self.bert(
+            input_ids, output_all_encoded_layers=False, attention_mask=attention_mask)
         word_attention_out = self.word_attention(
             bert_out, user_embs, product_embs, sentence_offsets)
         lstm_out, _ = self.lstm(word_attention_out)
@@ -61,5 +63,3 @@ class UPABert(torch.nn.Module):
         self.word_attention.to(*args, **kwargs)
         self.sentence_attention.to(*args, **kwargs)
         return self
-
-

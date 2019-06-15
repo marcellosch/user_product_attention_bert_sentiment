@@ -6,7 +6,7 @@ from model.vanilla_bert import VanillaBert
 from utils.data import SentimentDataset
 
 
-def main(state_dict_path, ModelClass, data ,out_path, model_args=(), model_kwargs={}, batch_size=1): 
+def main(state_dict_path, ModelClass, data, out_path, model_args=(), model_kwargs={}, batch_size=1):
 
     print(model_args),
     print(model_kwargs)
@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     test_dat = SentimentDataset(test_file, userlist_filename, productlist_filename,
                                 wordlist_filename)
-                                
+
     # Example of run
     out_path = './'
     state_dict_path = './training_output/yelp13/vanilla_bet_0001/VanillaBert/pytorch_model.bin'

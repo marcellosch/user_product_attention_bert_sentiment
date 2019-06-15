@@ -54,23 +54,21 @@ class UserProductAttention(torch.nn.Module):
             for b in range(batch_size):
                 sentence_representation = []
                 for s in range(max_sentence_count-1):
-                    if sentence_offsets[b,s].item() == -1:
+                    if sentence_offsets[b, s].item() == -1:
                         break
 
-                
-                    beg = sentence_offsets[b,s]
-                    end = 512 if sentence_offsets[b,s+1]==-1 else sentence_offsets[b,s+1]-1
-                    
-                    raw_alphas = self.v(self.tanh(Ht[b,beg:end,:] + ut[b,beg:end,:] + pt[b,beg:end,:] + bt[b,beg:end,:]))
+                    beg = sentence_offsets[b, s]
+                    end = 512 if sentence_offsets[b, s+1] == - \
+                        1 else sentence_offsets[b, s+1]-1
+
+                    raw_alphas = self.v(self.tanh(
+                        Ht[b, beg:end, :] + ut[b, beg:end, :] + pt[b, beg:end, :] + bt[b, beg:end, :]))
                     alphas = self.softmax(raw_alphas)
-                    sentence_representation.append(H[b,beg:end,:].transpose(0,1).matmul(alphas).squeeze())
+                    sentence_representation.append(
+                        H[b, beg:end, :].transpose(0, 1).matmul(alphas).squeeze())
                 sentence_representation = torch.stack(sentence_representation)
                 ret.append(sentence_representation)
             ret = torch.nn.utils.rnn.pad_sequence(ret, batch_first=True)
             return ret
-
-
-
-
 
             pass

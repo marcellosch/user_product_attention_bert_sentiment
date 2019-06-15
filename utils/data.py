@@ -285,9 +285,10 @@ class SentenceMatrixDataset(SentimentDataset):
 
 
 class SentenceOffsetDataset(SentimentDataset):
-    def __init__(self,*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(SentenceOffsetDataset, self).__init__(*args, **kwargs)
-        self.max_sentence_count = max([len(d) for d in self.documents["input_tokens"]])
+        self.max_sentence_count = max(
+            [len(d) for d in self.documents["input_tokens"]])
 
     def __getitem__(self, idx):
         user_id = self.documents["user_id"][idx]

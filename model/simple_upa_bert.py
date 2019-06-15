@@ -42,7 +42,7 @@ class SimpleUPABert(torch.nn.Module):
         word_attention_out = self.word_attention(
             bert_out, user_embs, product_embs, None)
         linear_out = self.linear(word_attention_out)
-        softmax_out = self.softmax(linear_out.view(-1,self.n_classes))
+        softmax_out = self.softmax(linear_out.view(-1, self.n_classes))
         return softmax_out
 
     def train(self):

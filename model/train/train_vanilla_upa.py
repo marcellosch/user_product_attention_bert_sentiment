@@ -16,10 +16,11 @@ if __name__ == "__main__":
     dev_file = folder + '/dev.txt'
     test_file = folder + '/test.txt'
 
-    create_dataset = lambda doc_file: SentenceMatrixDataset(doc_file, userlist_filename, productlist_filename,
-                        wordlist_filename, force_no_cache=args.force_document_processing)
+    def create_dataset(doc_file): return SentenceMatrixDataset(doc_file, userlist_filename, productlist_filename,
+                                                               wordlist_filename, force_no_cache=args.force_document_processing)
 
-    train_dat, dev_dat, test_dat = create_dataset(train_file), create_dataset(dev_file), create_dataset(test_file)
+    train_dat, dev_dat, test_dat = create_dataset(
+        train_file), create_dataset(dev_file), create_dataset(test_file)
 
     n_user = len(train_dat.users)
     n_product = len(train_dat.products)
